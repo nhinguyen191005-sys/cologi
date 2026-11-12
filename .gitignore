@@ -22,3 +22,7 @@ media/
 
 # Local databases
 *.sqlite3
+
+# Local backup artifacts
+*.bak
+*.bak.*

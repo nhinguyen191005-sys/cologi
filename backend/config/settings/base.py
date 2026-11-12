@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "masterdata.apps.MasterdataConfig",
     "rest_framework",
     "rest_framework.authtoken",
+    "demands.apps.DemandsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -142,6 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
+COLOGI_BUSINESS_TIME_ZONE = "Asia/Ho_Chi_Minh"
 
 USE_I18N = True
 
