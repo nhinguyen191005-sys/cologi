@@ -947,31 +947,24 @@ class DemandAPITests(APITestCase):
             http_status.HTTP_403_FORBIDDEN,
         )
 
-    def test_manager_and_purchasing_dual_role_remains_read_only(self):
+
+    def test_manager_cannot_create_or_update_demands(self):
         demand = self.create_db_demand()
 
-        dual_role_user = self.User.objects.create_user(
-            email="api-dual-role@example.test",
-            full_name="Dual Role User",
-        )
-        UserRole.objects.create(
-            user=dual_role_user,
-            role=self.buyer_role,
+        manager_user = self.User.objects.create_user(
+            email="api-manager-read-only@example.test",
+            full_name="Manager User",
         )
         manager_role = Role.objects.create(
             code=RoleCode.MANAGER,
             name="Manager",
         )
         UserRole.objects.create(
-            user=dual_role_user,
+            user=manager_user,
             role=manager_role,
         )
-        UserOutletAccess.objects.create(
-            user=dual_role_user,
-            outlet=self.outlet,
-        )
 
-        self.authenticate(dual_role_user)
+        self.authenticate(manager_user)
 
         create_response = self.client.post(
             self.list_url,
@@ -980,7 +973,7 @@ class DemandAPITests(APITestCase):
         )
         patch_response = self.client.patch(
             f"{self.list_url}{demand.pk}/",
-            {"notes": "Dual role write attempt"},
+            {"notes": "Manager write attempt"},
             format="json",
         )
 
@@ -992,6 +985,7 @@ class DemandAPITests(APITestCase):
             patch_response.status_code,
             http_status.HTTP_403_FORBIDDEN,
         )
+
 
     def test_supplier_and_transport_provider_cannot_access_demands(self):
         for index, role_code in enumerate(

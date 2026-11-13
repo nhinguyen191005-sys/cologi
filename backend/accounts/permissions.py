@@ -28,6 +28,7 @@ def get_active_external_access(user, actor_type):
             is_active=True,
             user__is_active=True,
             user__user_roles__role__code=actor_type,
+            user__user_roles__is_active=True,
             user__user_roles__role__is_active=True,
         )
         .select_related("supplier", "provider")
@@ -69,6 +70,8 @@ class HasCoLogiRole(BasePermission):
 
         return UserRole.objects.filter(
             user=user,
+            user__is_active=True,
+            is_active=True,
             role__code__in=required_roles,
             role__is_active=True,
         ).exists()
@@ -140,6 +143,8 @@ def get_active_user_outlet_accesses(user):
             outlet__is_active=True,
             user__user_roles__role__code=RoleCode.PURCHASING_STAFF,
             user__user_roles__role__is_active=True,
+            user__is_active=True,
+            user__user_roles__is_active=True,
         )
         .select_related("outlet")
         .distinct()

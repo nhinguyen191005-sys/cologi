@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class Supplier(models.Model):
     supplier_code = models.CharField(max_length=30, unique=True)
     supplier_name = models.CharField(max_length=200)

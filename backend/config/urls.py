@@ -47,6 +47,7 @@ urlpatterns = [
 
     # Business APIs
     path("api/auth/", include("accounts.urls")),
+    path("api/accounts/", include("accounts.role_urls")),
     path("api/masterdata/", include("masterdata.urls")),
     path("api/demands/", include("demands.urls")),
 ]

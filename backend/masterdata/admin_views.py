@@ -29,6 +29,7 @@ def has_active_manager_role(user):
 
     return UserRole.objects.filter(
         user=user,
+        is_active=True,
         role__code=RoleCode.MANAGER,
         role__is_active=True,
     ).exists()

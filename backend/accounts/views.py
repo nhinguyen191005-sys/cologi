@@ -96,6 +96,7 @@ class CurrentUserView(APIView):
         roles = list(
             UserRole.objects.filter(
                 user=user,
+                is_active=True,
                 role__is_active=True,
             )
             .order_by("role__code")

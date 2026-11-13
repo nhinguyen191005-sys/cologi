@@ -149,6 +149,7 @@ class Role(models.Model):
 
 
 class UserRole(models.Model):
+    is_active = models.BooleanField(default=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -174,6 +175,7 @@ class UserRole(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("user",),
+                condition=Q(is_active=True),
                 name="acc_userrole_user_uniq",
             ),
             models.CheckConstraint(
@@ -193,7 +195,7 @@ class UserRole(models.Model):
 
     def clean(self):
         super().clean()
-        if self.role_id and not self.role.is_active:
+        if self.is_active and self.role_id and not self.role.is_active:
             raise ValidationError({
                 "role": "Cannot assign an inactive role."
             })
@@ -227,7 +229,11 @@ class AuditLog(models.Model):
     )
     action = models.CharField(max_length=50)
     entity_type = models.CharField(max_length=50)
-    entity_id = models.CharField(max_length=100)
+    entity_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
     old_values = models.JSONField(null=True, blank=True)
     new_values = models.JSONField(null=True, blank=True)
     ip_address = models.GenericIPAddressField(
@@ -345,6 +351,7 @@ class ExternalUserAccess(models.Model):
             and self.actor_type in ExternalActorType.values
             and not UserRole.objects.filter(
                 user_id=self.user_id,
+                is_active=True,
                 role__code=self.actor_type,
                 role__is_active=True,
             ).exists()
@@ -405,6 +412,7 @@ class UserOutletAccess(models.Model):
         if self.is_active and self.user_id:
             has_purchasing_role = UserRole.objects.filter(
                 user_id=self.user_id,
+                is_active=True,
                 role__code=RoleCode.PURCHASING_STAFF,
                 role__is_active=True,
             ).exists()
