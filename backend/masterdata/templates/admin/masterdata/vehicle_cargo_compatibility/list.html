@@ -1,0 +1,119 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Vehicle–Cargo Compatibility</h1>
+
+  <p>
+    This matrix is used by F3 to validate vehicle capability.
+    Compatibility pairs are fixed by the approved master dataset.
+    Only the supported flag can be updated.
+  </p>
+
+  <form method="get" class="module">
+    <fieldset class="module aligned">
+      <div class="form-row">
+        <label for="vehicle_type">Vehicle type:</label>
+        <select name="vehicle_type" id="vehicle_type">
+          <option value="">All vehicles</option>
+          {% for vehicle in vehicle_types %}
+            <option
+              value="{{ vehicle.pk }}"
+              {% if selected_vehicle_type == vehicle.pk|stringformat:"s" %}selected{% endif %}
+            >
+              {{ vehicle.vehicle_code }} — {{ vehicle.vehicle_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="cargo_category">Cargo category:</label>
+        <select name="cargo_category" id="cargo_category">
+          <option value="">All cargo categories</option>
+          {% for cargo in cargo_categories %}
+            <option
+              value="{{ cargo.pk }}"
+              {% if selected_cargo_category == cargo.pk|stringformat:"s" %}selected{% endif %}
+            >
+              {{ cargo.category_code }} — {{ cargo.category_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="is_supported">Compatibility:</label>
+        <select name="is_supported" id="is_supported">
+          <option value="">All</option>
+          <option value="true" {% if selected_is_supported == "true" %}selected{% endif %}>
+            Supported
+          </option>
+          <option value="false" {% if selected_is_supported == "false" %}selected{% endif %}>
+            Not supported
+          </option>
+        </select>
+      </div>
+    </fieldset>
+
+    <div class="submit-row">
+      <input type="submit" value="Filter">
+      <a href="{% url 'masterdata_vehiclecargo_list' %}">Clear filters</a>
+    </div>
+  </form>
+
+  <div class="module">
+    <table id="result_list">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Capacity (kg)</th>
+          <th>Vehicle active</th>
+          <th>Cargo category</th>
+          <th>Supported</th>
+          <th>Source</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in compatibilities %}
+          <tr>
+            <td>
+              {{ item.vehicle_type.vehicle_code }}
+              — {{ item.vehicle_type.vehicle_name }}
+            </td>
+            <td>{{ item.vehicle_type.capacity_kg }}</td>
+            <td>{{ item.vehicle_type.is_active|yesno:"Yes,No" }}</td>
+            <td>
+              {{ item.cargo_category.category_code }}
+              — {{ item.cargo_category.category_name }}
+            </td>
+            <td>
+              {% if item.is_supported %}
+                Supported
+              {% else %}
+                Not supported
+              {% endif %}
+            </td>
+            <td>{{ item.source|default:"—" }}</td>
+            <td>
+              <a href="{% url 'masterdata_vehiclecargo_update' item.vehicle_type_id item.cargo_category_id %}">
+                Update
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">No compatibility records found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Total displayed: {{ compatibilities|length }} record(s).
+    Pair creation and deletion are not available.
+  </p>
+</div>
+{% endblock %}

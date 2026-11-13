@@ -22,3 +22,13 @@ class CurrentUserSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     roles = serializers.ListField(child=serializers.CharField())
     external_accesses = ExternalAccessSerializer(many=True)
+
+class LoginUserResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField()
+
+
+class LoginResponseSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user = LoginUserResponseSerializer()

@@ -208,3 +208,29 @@ class DeliveryDemandReadSerializer(serializers.ModelSerializer):
             "items",
         )
         read_only_fields = fields
+
+
+class DemandStatusResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    demand_code = serializers.CharField()
+    status = serializers.CharField(max_length=20)
+    updated_at = serializers.DateTimeField()
+
+
+class DemandSubmitResponseSerializer(serializers.Serializer):
+    submission_status = serializers.CharField()
+    supplier_request_id = serializers.IntegerField()
+
+
+class DemandSupplierSelectionResponseSerializer(serializers.Serializer):
+    selection_id = serializers.IntegerField()
+    demand_id = serializers.IntegerField()
+    selected_supplier_id = serializers.IntegerField()
+    selection_reason = serializers.ChoiceField(
+        choices=(
+            "RETRY_AFTER_EXPIRED",
+            "REPLACE_AFTER_DECLINED",
+            "REPLACE_AFTER_PARTIAL",
+        )
+    )
+    demand_status = serializers.CharField(max_length=20)

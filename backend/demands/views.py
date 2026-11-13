@@ -6,6 +6,7 @@ from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from accounts.models import RoleCode
 from accounts.permissions import filter_queryset_by_outlet_access
@@ -20,6 +21,9 @@ from .serializers import (
     DemandCreateSerializer,
     DemandPatchSerializer,
     DemandSupplierSelectionSerializer,
+    DemandStatusResponseSerializer,
+    DemandSubmitResponseSerializer,
+    DemandSupplierSelectionResponseSerializer,
 )
 from .services import (
     create_draft_demand,
@@ -103,6 +107,15 @@ class DemandListCreateView(APIView):
         DemandRoleOutletPermission,
     ]
 
+    @extend_schema(
+        operation_id="demands_list",
+        tags=["Demands"],
+        responses={
+            200: DeliveryDemandReadSerializer(many=True),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to list demands."),
+        },
+    )
     def get(self, request):
         queryset = demand_queryset_for_user(request.user)
 
@@ -112,6 +125,17 @@ class DemandListCreateView(APIView):
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        operation_id="demands_create",
+        tags=["Demands"],
+        request=DemandCreateSerializer,
+        responses={
+            201: DeliveryDemandReadSerializer,
+            400: OpenApiResponse(description="Request validation or business validation failed."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to create this demand."),
+        },
+    )
     def post(self, request):
         serializer = DemandCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -144,11 +168,34 @@ class DemandListCreateView(APIView):
 
 
 class DemandDetailView(DemandObjectMixin, APIView):
+    @extend_schema(
+        operation_id="demands_retrieve",
+        tags=["Demands"],
+        responses={
+            200: DeliveryDemandReadSerializer,
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to access this demand."),
+            404: OpenApiResponse(description="Demand not found in the actor's accessible scope."),
+        },
+    )
     def get(self, request, pk):
         demand = self.get_demand_object(request, pk)
         serializer = DeliveryDemandReadSerializer(demand)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        operation_id="demands_update",
+        tags=["Demands"],
+        request=DemandPatchSerializer,
+        responses={
+            200: DeliveryDemandReadSerializer,
+            400: OpenApiResponse(description="Request or business validation failed."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to update this demand."),
+            404: OpenApiResponse(description="Demand not found in the actor's accessible scope."),
+            409: OpenApiResponse(description="Demand cannot be edited in its current state."),
+        },
+    )
     def patch(self, request, pk):
         demand = self.get_demand_object(request, pk)
 
@@ -189,6 +236,16 @@ class DemandDetailView(DemandObjectMixin, APIView):
 
 
 class DemandStatusView(DemandObjectMixin, APIView):
+    @extend_schema(
+        operation_id="demands_status_retrieve",
+        tags=["Demands"],
+        responses={
+            200: DemandStatusResponseSerializer,
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to access this demand."),
+            404: OpenApiResponse(description="Demand not found in the actor's accessible scope."),
+        },
+    )
     def get(self, request, pk):
         demand = self.get_demand_object(request, pk)
 
@@ -209,6 +266,19 @@ class DemandSubmitView(DemandObjectMixin, APIView):
         DemandSubmitPermission,
     ]
 
+    @extend_schema(
+        operation_id="demands_submit",
+        tags=["Demands"],
+        request=None,
+        responses={
+            200: DemandSubmitResponseSerializer,
+            400: OpenApiResponse(description="Supplier offer or submission business validation failed."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to submit this demand."),
+            404: OpenApiResponse(description="Demand not found in the actor's accessible scope."),
+            409: OpenApiResponse(description="Demand or supplier request is in a conflicting state."),
+        },
+    )
     def post(self, request, pk):
         demand = self.get_demand_object(request, pk)
 
@@ -242,6 +312,19 @@ class DemandSelectSupplierView(DemandObjectMixin, APIView):
         DemandSubmitPermission,
     ]
 
+    @extend_schema(
+        operation_id="demands_select_supplier",
+        tags=["Demands"],
+        request=DemandSupplierSelectionSerializer,
+        responses={
+            200: DemandSupplierSelectionResponseSerializer,
+            400: OpenApiResponse(description="Supplier selection validation failed."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="The actor is not allowed to select a supplier."),
+            404: OpenApiResponse(description="Demand not found in the actor's accessible scope."),
+            409: OpenApiResponse(description="Supplier selection conflicts with the current demand or commitment state."),
+        },
+    )
     def post(self, request, pk):
         demand = self.get_demand_object(request, pk)
 

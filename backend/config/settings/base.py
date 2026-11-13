@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "masterdata.apps.MasterdataConfig",
     "rest_framework",
+    "drf_spectacular",
     "rest_framework.authtoken",
     "demands.apps.DemandsConfig",
 ]
@@ -159,3 +160,56 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Logging
+# Console output works in local development and container environments.
+LOG_LEVEL = os.environ.get("DJANGO_LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "standard",
+            "level": LOG_LEVEL,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "cologi": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
+
+
+# OpenAPI documentation metadata
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CoLogi API",
+    "DESCRIPTION": (
+        "API documentation for the CoLogi collaboration and delivery "
+        "demand management backend."
+    ),
+    "VERSION": "1.0.0",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SERVE_INCLUDE_SCHEMA": False,
+}

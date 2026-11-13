@@ -218,3 +218,74 @@ class SupplierItem(models.Model):
 
     def __str__(self):
         return f"{self.supplier_id} -> {self.item_id}"
+
+
+class Hub(models.Model):
+    hub_code = models.CharField(max_length=30, unique=True)
+    hub_name = models.CharField(max_length=150)
+    address = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "hubs"
+        ordering = ("hub_code",)
+
+    def __str__(self):
+        return f"{self.hub_code} - {self.hub_name}"
+
+
+class VehicleType(models.Model):
+    vehicle_code = models.CharField(max_length=30, unique=True)
+    vehicle_name = models.CharField(max_length=150)
+    capacity_kg = models.DecimalField(max_digits=12, decimal_places=3)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "vehicle_types"
+        ordering = ("vehicle_code",)
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity_kg__gt=0),
+                name="md_vtype_capacity_positive",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.vehicle_code} - {self.vehicle_name}"
+
+
+class VehicleCargoCompatibility(models.Model):
+    pk = models.CompositePrimaryKey(
+        "vehicle_type",
+        "cargo_category",
+    )
+
+    vehicle_type = models.ForeignKey(
+        VehicleType,
+        on_delete=models.PROTECT,
+        db_column="vehicle_type_id",
+        related_name="cargo_compatibilities",
+    )
+    cargo_category = models.ForeignKey(
+        CargoCategory,
+        on_delete=models.PROTECT,
+        db_column="cargo_category_id",
+        related_name="vehicle_compatibilities",
+    )
+    is_supported = models.BooleanField()
+    source = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        db_table = "vehicle_cargo_compatibility"
+
+    def __str__(self):
+        return (
+            f"{self.vehicle_type_id} - "
+            f"{self.cargo_category_id}: {self.is_supported}"
+        )

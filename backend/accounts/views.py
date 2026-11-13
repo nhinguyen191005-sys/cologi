@@ -4,15 +4,30 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from .models import ExternalUserAccess, UserRole
-from .serializers import LoginSerializer
+from .serializers import (
+    CurrentUserSerializer,
+    LoginResponseSerializer,
+    LoginSerializer,
+)
 
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
+    @extend_schema(
+        operation_id="auth_login",
+        tags=["Authentication"],
+        request=LoginSerializer,
+        responses={
+            200: LoginResponseSerializer,
+            400: OpenApiResponse(description="Request validation failed."),
+            401: OpenApiResponse(description="Invalid email or password."),
+        },
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -50,6 +65,15 @@ class LoginView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        operation_id="auth_logout",
+        tags=["Authentication"],
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Token revoked; no response body."),
+            401: OpenApiResponse(description="Authentication required."),
+        },
+    )
     def post(self, request):
         request.auth.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -58,6 +82,14 @@ class LogoutView(APIView):
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        operation_id="auth_current_user",
+        tags=["Authentication"],
+        responses={
+            200: CurrentUserSerializer,
+            401: OpenApiResponse(description="Authentication required."),
+        },
+    )
     def get(self, request):
         user = request.user
 

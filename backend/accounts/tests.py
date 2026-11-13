@@ -761,6 +761,61 @@ class ExternalActorScopePermissionTests(TestCase):
             )
         )
 
+    def test_inactive_supplier_invalidates_external_access(self):
+        self.supplier.is_active = False
+        self.supplier.save(update_fields=["is_active"])
+
+        self.assertFalse(
+            HasExternalActorScope().has_permission(
+                self.make_request(),
+                self.view,
+            )
+        )
+
+    def test_inactive_provider_invalidates_external_access(self):
+        provider_user = User.objects.create_user(
+            email="inactive-provider@example.com",
+            password="Strong-test-password-123",
+            full_name="Inactive Provider",
+        )
+        provider_role = Role.objects.create(
+            code=RoleCode.TRANSPORT_PROVIDER,
+            name="Transport Provider",
+        )
+        UserRole.objects.create(
+            user=provider_user,
+            role=provider_role,
+        )
+
+        provider = TransportProvider.objects.create(
+            provider_code="TP-INACTIVE-001",
+            provider_name="Inactive Provider",
+            provider_type="EXTERNAL",
+            service_region="Test region",
+            contact_email="inactive-provider@example.com",
+            is_active=True,
+        )
+        ExternalUserAccess.objects.create(
+            user=provider_user,
+            actor_type=ExternalActorType.TRANSPORT_PROVIDER,
+            provider=provider,
+        )
+
+        provider.is_active = False
+        provider.save(update_fields=["is_active"])
+
+        provider_view = SimpleNamespace(
+            required_actor_type=ExternalActorType.TRANSPORT_PROVIDER,
+            external_scope_field="provider_id",
+        )
+
+        self.assertFalse(
+            HasExternalActorScope().has_permission(
+                self.make_request(provider_user),
+                provider_view,
+            )
+        )
+
     def test_provider_access_cannot_be_used_as_supplier_access(self):
         provider_user = User.objects.create_user(
             email="provider-scope@example.com",

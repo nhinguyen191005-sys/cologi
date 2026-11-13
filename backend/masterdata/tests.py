@@ -1,6 +1,8 @@
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from decimal import Decimal
+from django.db.models.deletion import ProtectedError
+
 
 from .models import (
     CargoCategory,
@@ -9,6 +11,9 @@ from .models import (
     Supplier,
     SupplierItem,
     TransportProvider,
+    Hub,
+    VehicleCargoCompatibility,
+    VehicleType,
 )
 
 
@@ -355,3 +360,230 @@ class SupplierItemTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 self.create_offer(offer_status="PENDING")
+
+
+class HubTests(TestCase):
+    def test_hub_uses_v7_table_and_fields(self):
+        self.assertEqual(Hub._meta.db_table, "hubs")
+        self.assertEqual(
+            {field.name for field in Hub._meta.fields},
+            {
+                "id",
+                "hub_code",
+                "hub_name",
+                "address",
+                "is_active",
+                "created_at",
+            },
+        )
+
+    def test_hub_defaults_to_active_and_has_created_at(self):
+        hub = Hub.objects.create(
+            hub_code="HUB-TEST-001",
+            hub_name="Test Hub",
+            address="Da Nang",
+        )
+
+        self.assertTrue(hub.is_active)
+        self.assertIsNotNone(hub.created_at)
+
+    def test_hub_code_must_be_unique(self):
+        Hub.objects.create(
+            hub_code="HUB-TEST-002",
+            hub_name="Hub One",
+            address="Da Nang",
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Hub.objects.create(
+                    hub_code="HUB-TEST-002",
+                    hub_name="Hub Two",
+                    address="Hue",
+                )
+
+    def test_hub_can_be_soft_deactivated(self):
+        hub = Hub.objects.create(
+            hub_code="HUB-TEST-003",
+            hub_name="Inactive Hub",
+            address="Da Nang",
+        )
+
+        hub.is_active = False
+        hub.save(update_fields=("is_active",))
+        hub.refresh_from_db()
+
+        self.assertFalse(hub.is_active)
+
+
+class VehicleTypeTests(TestCase):
+    def test_vehicle_type_uses_v7_table_and_fields(self):
+        self.assertEqual(VehicleType._meta.db_table, "vehicle_types")
+        self.assertEqual(
+            {field.name for field in VehicleType._meta.fields},
+            {
+                "id",
+                "vehicle_code",
+                "vehicle_name",
+                "capacity_kg",
+                "description",
+                "is_active",
+            },
+        )
+
+    def test_vehicle_type_stores_capacity_and_optional_description(self):
+        vehicle = VehicleType.objects.create(
+            vehicle_code="VEH-TEST-001",
+            vehicle_name="Test Truck",
+            capacity_kg=Decimal("2500.000"),
+        )
+
+        self.assertEqual(vehicle.capacity_kg, Decimal("2500.000"))
+        self.assertIsNone(vehicle.description)
+        self.assertTrue(vehicle.is_active)
+
+    def test_vehicle_code_must_be_unique(self):
+        VehicleType.objects.create(
+            vehicle_code="VEH-TEST-002",
+            vehicle_name="Truck One",
+            capacity_kg=1000,
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                VehicleType.objects.create(
+                    vehicle_code="VEH-TEST-002",
+                    vehicle_name="Truck Two",
+                    capacity_kg=2000,
+                )
+
+    def test_vehicle_capacity_must_be_positive(self):
+        for value in ("0", "-1"):
+            with self.subTest(value=value):
+                with self.assertRaises(IntegrityError):
+                    with transaction.atomic():
+                        VehicleType.objects.create(
+                            vehicle_code=f"VEH-INVALID-{value}",
+                            vehicle_name="Invalid Truck",
+                            capacity_kg=value,
+                        )
+
+    def test_vehicle_type_can_be_soft_deactivated(self):
+        vehicle = VehicleType.objects.create(
+            vehicle_code="VEH-TEST-003",
+            vehicle_name="Inactive Truck",
+            capacity_kg=1000,
+        )
+
+        vehicle.is_active = False
+        vehicle.save(update_fields=("is_active",))
+        vehicle.refresh_from_db()
+
+        self.assertFalse(vehicle.is_active)
+
+
+class VehicleCargoCompatibilityTests(TestCase):
+    def setUp(self):
+        self.vehicle = VehicleType.objects.create(
+            vehicle_code="VEH-COMP-001",
+            vehicle_name="Compatibility Truck",
+            capacity_kg=2500,
+        )
+        self.category = CargoCategory.objects.create(
+            category_code="CAT-COMP-001",
+            category_name="Compatibility Cargo",
+        )
+
+    def create_compatibility(self, **overrides):
+        values = {
+            "vehicle_type": self.vehicle,
+            "cargo_category": self.category,
+            "is_supported": True,
+            "source": "V7",
+        }
+        values.update(overrides)
+        return VehicleCargoCompatibility.objects.create(**values)
+
+    def test_compatibility_uses_v7_table_and_composite_pk(self):
+        model = VehicleCargoCompatibility
+
+        self.assertEqual(
+            model._meta.db_table,
+            "vehicle_cargo_compatibility",
+        )
+        self.assertEqual(
+            tuple(model._meta.pk.field_names),
+            ("vehicle_type", "cargo_category"),
+        )
+
+    def test_compatibility_stores_supported_and_source(self):
+        compatibility = self.create_compatibility()
+
+        self.assertTrue(compatibility.is_supported)
+        self.assertEqual(compatibility.source, "V7")
+        self.assertEqual(
+            compatibility.pk,
+            (self.vehicle.pk, self.category.pk),
+        )
+
+    def test_compatibility_pair_must_be_unique(self):
+        self.create_compatibility()
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_compatibility()
+
+    def test_same_vehicle_can_have_multiple_cargo_categories(self):
+        second_category = CargoCategory.objects.create(
+            category_code="CAT-COMP-002",
+            category_name="Second Cargo",
+        )
+
+        first = self.create_compatibility()
+        second = self.create_compatibility(
+            cargo_category=second_category,
+        )
+
+        self.assertEqual(first.vehicle_type_id, second.vehicle_type_id)
+        self.assertNotEqual(
+            first.cargo_category_id,
+            second.cargo_category_id,
+        )
+
+    def test_same_cargo_can_be_supported_by_multiple_vehicles(self):
+        second_vehicle = VehicleType.objects.create(
+            vehicle_code="VEH-COMP-002",
+            vehicle_name="Second Truck",
+            capacity_kg=5000,
+        )
+
+        first = self.create_compatibility()
+        second = self.create_compatibility(vehicle_type=second_vehicle)
+
+        self.assertEqual(first.cargo_category_id, second.cargo_category_id)
+        self.assertNotEqual(
+            first.vehicle_type_id,
+            second.vehicle_type_id,
+        )
+
+    def test_vehicle_type_cannot_be_deleted_while_referenced(self):
+        self.create_compatibility()
+
+        with self.assertRaises(ProtectedError):
+            self.vehicle.delete()
+
+    def test_cargo_category_cannot_be_deleted_while_compatibility_references_it(self):
+        self.create_compatibility()
+
+        with self.assertRaises(ProtectedError):
+            self.category.delete()
+
+    def test_source_can_be_null(self):
+        compatibility = self.create_compatibility(source=None)
+
+        self.assertIsNone(compatibility.source)
+
+    def test_unsupported_pair_is_stored(self):
+        compatibility = self.create_compatibility(is_supported=False)
+
+        self.assertFalse(compatibility.is_supported)

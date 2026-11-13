@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Update Vehicle–Cargo Compatibility</h1>
+
+  <div class="module">
+    <table>
+      <tr>
+        <th>Vehicle</th>
+        <td>
+          {{ compatibility.vehicle_type.vehicle_code }}
+          — {{ compatibility.vehicle_type.vehicle_name }}
+        </td>
+      </tr>
+      <tr>
+        <th>Capacity</th>
+        <td>{{ compatibility.vehicle_type.capacity_kg }} kg</td>
+      </tr>
+      <tr>
+        <th>Vehicle active</th>
+        <td>{{ compatibility.vehicle_type.is_active|yesno:"Yes,No" }}</td>
+      </tr>
+      <tr>
+        <th>Cargo category</th>
+        <td>
+          {{ compatibility.cargo_category.category_code }}
+          — {{ compatibility.cargo_category.category_name }}
+        </td>
+      </tr>
+      <tr>
+        <th>Source</th>
+        <td>{{ compatibility.source|default:"—" }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <p>
+    The Vehicle–Cargo pair is immutable.
+    Only the supported flag can be changed.
+  </p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <div class="submit-row">
+      <input type="submit" value="Save">
+      <a href="{% url 'masterdata_vehiclecargo_list' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

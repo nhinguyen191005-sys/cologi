@@ -20,19 +20,26 @@ def get_active_external_access(user, actor_type):
     ):
         return None
 
-    return (
+    accesses = (
         ExternalUserAccess.objects
         .filter(
             user=user,
             actor_type=actor_type,
             is_active=True,
+            user__is_active=True,
             user__user_roles__role__code=actor_type,
             user__user_roles__role__is_active=True,
         )
         .select_related("supplier", "provider")
         .distinct()
-        .first()
     )
+
+    if actor_type == ExternalActorType.SUPPLIER:
+        accesses = accesses.filter(supplier__is_active=True)
+    elif actor_type == ExternalActorType.TRANSPORT_PROVIDER:
+        accesses = accesses.filter(provider__is_active=True)
+
+    return accesses.first()
 
 
 class HasCoLogiRole(BasePermission):
