@@ -114,6 +114,15 @@ class DemandPatchSerializer(
         return attrs
 
 
+class DemandSupplierSelectionSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    selected_supplier_id = serializers.PrimaryKeyRelatedField(
+        queryset=Supplier.objects.filter(is_active=True),
+    )
+
+
 class DemandItemReadSerializer(serializers.ModelSerializer):
     item_id = serializers.IntegerField(read_only=True)
     item_code = serializers.CharField(

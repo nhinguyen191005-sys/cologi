@@ -11,13 +11,22 @@ from accounts.models import RoleCode
 from accounts.permissions import filter_queryset_by_outlet_access
 
 from .models import DeliveryDemand
-from .permissions import DemandRoleOutletPermission
+from .permissions import (
+    DemandRoleOutletPermission,
+    DemandSubmitPermission,
+)
 from .serializers import (
     DeliveryDemandReadSerializer,
     DemandCreateSerializer,
     DemandPatchSerializer,
+    DemandSupplierSelectionSerializer,
 )
-from .services import create_draft_demand, update_draft_demand
+from .services import (
+    create_draft_demand,
+    select_supplier_for_submitted_demand,
+    submit_demand,
+    update_draft_demand,
+)
 
 
 class DemandConflict(APIException):
@@ -189,6 +198,85 @@ class DemandStatusView(DemandObjectMixin, APIView):
                 "demand_code": demand.demand_code,
                 "status": demand.status,
                 "updated_at": demand.updated_at,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DemandSubmitView(DemandObjectMixin, APIView):
+    permission_classes = [
+        IsAuthenticated,
+        DemandSubmitPermission,
+    ]
+
+    def post(self, request, pk):
+        demand = self.get_demand_object(request, pk)
+
+        try:
+            supplier_request = submit_demand(
+                demand_id=demand.pk,
+                submitted_by=request.user,
+            )
+        except DjangoValidationError as exc:
+            # A state conflict is distinct from a failed business gate.
+            if hasattr(exc, "message_dict") and (
+                "status" in exc.message_dict
+                or "supplier_request" in exc.message_dict
+            ):
+                raise DemandConflict(exc.message_dict)
+
+            raise_api_validation_error(exc)
+
+        return Response(
+            {
+                "submission_status": "SUBMITTED",
+                "supplier_request_id": supplier_request.pk,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DemandSelectSupplierView(DemandObjectMixin, APIView):
+    permission_classes = [
+        IsAuthenticated,
+        DemandSubmitPermission,
+    ]
+
+    def post(self, request, pk):
+        demand = self.get_demand_object(request, pk)
+
+        serializer = DemandSupplierSelectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        selected_supplier = serializer.validated_data["selected_supplier_id"]
+
+        try:
+            selection = select_supplier_for_submitted_demand(
+                demand_id=demand.pk,
+                selected_by=request.user,
+                selected_supplier_id=selected_supplier.pk,
+            )
+        except DjangoValidationError as exc:
+            if hasattr(exc, "message_dict") and any(
+                key in exc.message_dict
+                for key in (
+                    "status",
+                    "supplier_request",
+                    "commitment",
+                    "supplier_selection",
+                )
+            ):
+                raise DemandConflict(exc.message_dict)
+
+            raise_api_validation_error(exc)
+
+        return Response(
+            {
+                "selection_id": selection.pk,
+                "demand_id": selection.demand_id,
+                "selected_supplier_id": selection.selected_supplier_id,
+                "selection_reason": selection.selection_reason,
+                "demand_status": "SUBMITTED",
             },
             status=status.HTTP_200_OK,
         )
