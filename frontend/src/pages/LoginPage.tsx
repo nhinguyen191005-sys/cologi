@@ -9,6 +9,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   if (isAuthenticated) {
@@ -33,7 +34,7 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <div className="brand-mark">C</div>
+        <img className="brand-mark" src="/images/logo.png" alt="CoLogi" />
         <p className="eyebrow">COLOGI PLATFORM</p>
         <h1>Đăng nhập</h1>
         <p className="muted">
@@ -53,17 +54,32 @@ export default function LoginPage() {
           />
 
           <label htmlFor="password">Mật khẩu</label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            placeholder="Nhập mật khẩu"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+          <div className="password-input-wrapper">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="Nhập mật khẩu"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? 'Ẩn' : 'Hiện'}
+            </button>
+          </div>
 
-          {error && <p className="error-message">{error}</p>}
+          {error && (
+            <p className="error-message" role="alert">
+              {error}
+            </p>
+          )}
 
           <button type="submit" disabled={submitting || isLoading}>
             {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}

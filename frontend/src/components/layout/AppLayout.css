@@ -260,3 +260,25 @@
     margin-inline: 18px;
   }
 }
+
+.sidebar-link-disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.sidebar-link-disabled:hover {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.sidebar-link-label {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.sidebar-link-label small {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 400;
+}

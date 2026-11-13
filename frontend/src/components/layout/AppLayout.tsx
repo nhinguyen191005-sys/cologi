@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/useAuth'
+import type { BusinessRole } from '../../types/auth'
 import './AppLayout.css'
 
 const roleLabels: Record<string, string> = {
@@ -7,6 +8,13 @@ const roleLabels: Record<string, string> = {
   SUPPLIER: 'Supplier',
   TRANSPORT_PROVIDER: 'Transport Provider',
   MANAGER: 'Manager',
+}
+
+const roleNavigation: Record<BusinessRole, { label: string; icon: string }> = {
+  PURCHASING_STAFF: { label: 'Purchasing', icon: '▤' },
+  SUPPLIER: { label: 'Supplier Fulfillment', icon: '◈' },
+  TRANSPORT_PROVIDER: { label: 'Transportation', icon: '⇄' },
+  MANAGER: { label: 'Management', icon: '▦' },
 }
 
 export default function AppLayout() {
@@ -40,6 +48,24 @@ export default function AppLayout() {
             <span className="sidebar-link-icon">⌂</span>
             <span>Tổng quan</span>
           </NavLink>
+          {user.roles.map((role) => {
+            const item = roleNavigation[role]
+
+            return (
+              <div
+                key={role}
+                className="sidebar-link sidebar-link-disabled"
+                aria-disabled="true"
+                title={`${item.label} - Sắp ra mắt`}
+              >
+                <span className="sidebar-link-icon">{item.icon}</span>
+                <span className="sidebar-link-label">
+                  <span>{item.label}</span>
+                  <small>Sắp ra mắt</small>
+                </span>
+              </div>
+            )
+          })}
         </nav>
 
         <div className="sidebar-footer">
