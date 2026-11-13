@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  font-family: 'DM Sans', Arial, sans-serif;
+  color: #172033;
+  background: #f4f6fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #eef3ff, #f8faff);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  background: white;
+  border: 1px solid #e7eaf1;
+  border-radius: 18px;
+  box-shadow: 0 18px 55px rgb(28 45 80 / 8%);
+}
+
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #2458c6;
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.brand-mark.small {
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+}
+
+.eyebrow {
+  margin: 22px 0 8px;
+  color: #5273b7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+
+.muted {
+  color: #737d90;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.auth-form label {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #dce1eb;
+  border-radius: 9px;
+  outline: none;
+}
+
+.auth-form input:focus {
+  border-color: #4775d1;
+  box-shadow: 0 0 0 3px rgb(71 117 209 / 12%);
+}
+
+.auth-form button,
+.secondary-button {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 9px;
+  background: #2458c6;
+  color: white;
+  font-weight: 600;
+}
+
+.auth-form button {
+  margin-top: 16px;
+}
+
+.error-message {
+  color: #bd3030;
+  font-size: 13px;
+}
+
+.dashboard {
+  min-height: 100vh;
+}
+
+.topbar {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7%;
+  background: white;
+  border-bottom: 1px solid #e8ebf1;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.secondary-button {
+  background: #edf2fc;
+  color: #2458c6;
+}
+
+.welcome,
+.info-card {
+  width: min(900px, 86%);
+  margin: 48px auto 0;
+}
+
+.welcome .eyebrow {
+  margin-top: 0;
+}
+
+.info-card {
+  margin-top: 30px;
+  padding: 28px;
+  background: white;
+  border: 1px solid #e7eaf1;
+  border-radius: 14px;
+}
+
+.info-card h2 {
+  margin: 0 0 22px;
+  font-size: 18px;
+}
+
+.info-card dl {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+}
+
+.info-card dl div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+}
+
+.info-card dt {
+  color: #737d90;
+}
+
+.info-card dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.loading-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #737d90;
+}

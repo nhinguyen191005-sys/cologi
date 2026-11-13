@@ -26,3 +26,9 @@ media/
 # Local backup artifacts
 *.bak
 *.bak.*
+
+# Node.js / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo

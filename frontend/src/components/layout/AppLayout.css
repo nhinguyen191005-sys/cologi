@@ -1,0 +1,262 @@
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+}
+
+.app-sidebar {
+  width: 252px;
+  min-height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sidebar);
+  z-index: 2;
+}
+
+.sidebar-brand {
+  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+  text-decoration: none;
+}
+
+.sidebar-brand img {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
+
+.sidebar-section-label {
+  padding: 0 12px 12px;
+  color: #9AA69C;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sidebar-link:hover {
+  background: var(--color-surface-soft);
+  color: var(--color-primary);
+}
+
+.sidebar-link.active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  box-shadow: inset 3px 0 var(--color-old-gold);
+}
+
+.sidebar-link-icon {
+  width: 20px;
+  font-size: 20px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 18px 6px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.sidebar-user-info {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.sidebar-user-info strong,
+.sidebar-user-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-info strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.sidebar-user-info span {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.app-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.app-header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 36px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-header > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.header-label {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+.header-page-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-account {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.header-account-info {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.header-account-info strong {
+  font-size: 12px;
+}
+
+.header-account-info span {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.header-logout-button {
+  padding: 9px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.header-logout-button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.app-content {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 36px;
+}
+
+.layout-error {
+  margin: 16px 36px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: #FCECEC;
+  color: #A52828;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .app-sidebar {
+    width: 76px;
+    padding: 18px 10px;
+  }
+
+  .sidebar-brand {
+    height: 76px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-brand img {
+    width: 76px;
+    height: 76px;
+  }
+
+  .sidebar-section-label,
+  .sidebar-link span:last-child,
+  .sidebar-user-info {
+    display: none;
+  }
+
+  .sidebar-link {
+    justify-content: center;
+    padding: 13px 8px;
+  }
+
+  .sidebar-footer {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .header-account-info {
+    display: none;
+  }
+
+  .app-header {
+    padding: 12px 18px;
+  }
+
+  .app-content {
+    padding: 24px 18px;
+  }
+
+  .layout-error {
+    margin-inline: 18px;
+  }
+}

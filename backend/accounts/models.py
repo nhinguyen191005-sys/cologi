@@ -173,8 +173,15 @@ class UserRole(models.Model):
         ordering = ("user_id", "role_id")
         constraints = [
             models.UniqueConstraint(
-                fields=("user", "role"),
-                name="acc_userrole_user_role_uniq",
+                fields=("user",),
+                name="acc_userrole_user_uniq",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(assigned_by__isnull=True)
+                    | ~models.Q(assigned_by=models.F("user"))
+                ),
+                name="acc_userrole_no_self_assign",
             ),
         ]
         indexes = [
@@ -190,9 +197,74 @@ class UserRole(models.Model):
             raise ValidationError({
                 "role": "Cannot assign an inactive role."
             })
+        if (
+            self.user_id
+            and self.assigned_by_id is not None
+            and self.assigned_by_id == self.user_id
+        ):
+            raise ValidationError({
+                "assigned_by": "Users cannot assign a business role to themselves."
+            })
 
     def __str__(self):
         return f"{self.user_id} -> {self.role.code}"
+
+class AuditLog(models.Model):
+    """
+    Shared audit trail for important business mutations.
+
+    Audit records are append-only. Business services create records;
+    normal application flows must not update or delete existing records.
+    """
+
+    actor_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+        db_index=False,
+    )
+    action = models.CharField(max_length=50)
+    entity_type = models.CharField(max_length=50)
+    entity_id = models.CharField(max_length=100)
+    old_values = models.JSONField(null=True, blank=True)
+    new_values = models.JSONField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(
+        protocol="both",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "audit_logs"
+        ordering = ("-created_at", "-pk")
+        indexes = [
+            models.Index(
+                fields=("entity_type", "entity_id", "created_at"),
+                name="acc_audit_entity_time_idx",
+            ),
+            models.Index(
+                fields=("actor_user", "created_at"),
+                name="acc_audit_actor_time_idx",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Audit records cannot be updated.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Audit records cannot be deleted.")
+
+    def __str__(self):
+        return (
+            f"{self.action} {self.entity_type}:{self.entity_id} "
+            f"by {self.actor_user_id or 'system'}"
+        )
+
 
 class ExternalActorType(models.TextChoices):
     SUPPLIER = "SUPPLIER", "Supplier"

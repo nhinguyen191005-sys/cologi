@@ -1,0 +1,53 @@
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/BricolageGrotesque-VariableFont_opsz,wdth,wght.ttf')
+    format('truetype');
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  /* CoLogi brand */
+  --color-black-forest: #123C1B;
+  --color-dark-emerald: #1E6B3A;
+  --color-jungle-green: #4BB169;
+  --color-old-gold: #D5B85A;
+
+  /* Semantic colors */
+  --color-primary: #1E6B3A;
+  --color-primary-dark: #123C1B;
+  --color-primary-soft: #EAF4ED;
+  --color-accent: #D5B85A;
+
+  /* Surfaces */
+  --color-background: #F7F9F7;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F1F5F1;
+
+  /* Text */
+  --color-text: #1B2B20;
+  --color-text-secondary: #718075;
+  --color-border: #E5EBE6;
+
+  /* Status */
+  --color-success: #25834A;
+  --color-warning: #B58A24;
+  --color-danger: #C64747;
+
+  /* Typography */
+  --font-family-base: 'Bricolage Grotesque', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Shape and elevation */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --shadow-card: 0 3px 16px rgba(18, 60, 27, 0.045);
+  --shadow-sidebar: 2px 0 16px rgba(18, 60, 27, 0.035);
+}

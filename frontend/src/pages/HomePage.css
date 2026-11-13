@@ -1,0 +1,118 @@
+.dashboard-page {
+  display: grid;
+  gap: 36px;
+}
+
+.dashboard-welcome {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 190px;
+  padding: 34px 38px;
+  border: 1px solid rgba(30, 107, 58, 0.1);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(75, 177, 105, 0.2), transparent 35%),
+    linear-gradient(115deg, #123C1B 0%, #1E6B3A 100%);
+  color: white;
+  box-shadow: 0 12px 30px rgba(18, 60, 27, 0.09);
+}
+
+.dashboard-eyebrow {
+  margin: 0 0 12px;
+  color: var(--color-old-gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+}
+
+.dashboard-welcome h1 {
+  margin: 0;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.dashboard-description {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+}
+
+.welcome-decoration {
+  color: rgba(255, 255, 255, 0.09);
+  font-size: 150px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dashboard-section {
+  display: grid;
+  gap: 18px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.section-heading p {
+  margin: 5px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.account-card {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 23px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.account-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(18, 60, 27, 0.075);
+}
+
+.account-card-label {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.account-card strong {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .dashboard-welcome {
+    min-height: 160px;
+    padding: 24px;
+  }
+
+  .welcome-decoration {
+    font-size: 90px;
+  }
+
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+}
