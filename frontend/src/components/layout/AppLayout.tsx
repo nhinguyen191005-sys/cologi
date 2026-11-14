@@ -48,8 +48,25 @@ export default function AppLayout() {
             <span className="sidebar-link-icon">⌂</span>
             <span>Tổng quan</span>
           </NavLink>
+
           {user.roles.map((role) => {
             const item = roleNavigation[role]
+
+            if (role === 'PURCHASING_STAFF' || role === 'MANAGER') {
+              return (
+                <NavLink
+                  key={role}
+                  to="/demands"
+                  className="sidebar-link"
+                >
+                  <span className="sidebar-link-icon">{item.icon}</span>
+                  <span className="sidebar-link-label">
+                    <span>{item.label}</span>
+                    <small>Quản lý nhu cầu</small>
+                  </span>
+                </NavLink>
+              )
+            }
 
             return (
               <div
