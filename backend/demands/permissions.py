@@ -28,6 +28,7 @@ class DemandRoleOutletPermission(BasePermission):
 
         return set(
             user.user_roles.filter(
+                is_active=True,
                 role__is_active=True,
             ).values_list("role__code", flat=True)
         )
@@ -123,6 +124,7 @@ class DemandSubmitPermission(BasePermission):
 
         roles = set(
             request.user.user_roles.filter(
+                is_active=True,
                 role__is_active=True,
             ).values_list("role__code", flat=True)
         )
@@ -138,6 +140,61 @@ class DemandSubmitPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         roles = set(
             request.user.user_roles.filter(
+                is_active=True,
+                role__is_active=True,
+            ).values_list("role__code", flat=True)
+        )
+
+        if (
+            RoleCode.MANAGER in roles
+            or RoleCode.PURCHASING_STAFF not in roles
+        ):
+            return False
+
+        if obj.created_by_id != request.user.pk:
+            return False
+
+        return get_active_user_outlet_accesses(
+            request.user
+        ).filter(
+            outlet_id=obj.outlet_id,
+        ).exists()
+
+class DemandCancelPermission(BasePermission):
+    """
+    Cancel is restricted to the Demand creator, within active Outlet scope.
+
+    MANAGER is always read-only, including dual-role accounts.
+    """
+
+    message = (
+        "Only the Demand creator with Purchasing Staff Outlet "
+        "access may cancel."
+    )
+
+    def has_permission(self, request, view):
+        if not getattr(request.user, "is_authenticated", False):
+            return False
+
+        roles = set(
+            request.user.user_roles.filter(
+                is_active=True,
+                role__is_active=True,
+            ).values_list("role__code", flat=True)
+        )
+
+        if (
+            RoleCode.MANAGER in roles
+            or RoleCode.PURCHASING_STAFF not in roles
+        ):
+            return False
+
+        return get_active_user_outlet_accesses(request.user).exists()
+
+    def has_object_permission(self, request, view, obj):
+        roles = set(
+            request.user.user_roles.filter(
+                is_active=True,
                 role__is_active=True,
             ).values_list("role__code", flat=True)
         )

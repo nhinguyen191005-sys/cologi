@@ -15,6 +15,7 @@ from .models import DeliveryDemand
 from .permissions import (
     DemandRoleOutletPermission,
     DemandSubmitPermission,
+    DemandCancelPermission,
 )
 from .serializers import (
     DeliveryDemandReadSerializer,
@@ -26,6 +27,7 @@ from .serializers import (
     DemandSupplierSelectionResponseSerializer,
 )
 from .services import (
+    cancel_demand,
     create_draft_demand,
     select_supplier_for_submitted_demand,
     submit_demand,
@@ -360,6 +362,64 @@ class DemandSelectSupplierView(DemandObjectMixin, APIView):
                 "selected_supplier_id": selection.selected_supplier_id,
                 "selection_reason": selection.selection_reason,
                 "demand_status": "SUBMITTED",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class DemandCancelView(DemandObjectMixin, APIView):
+    permission_classes = [
+        IsAuthenticated,
+        DemandCancelPermission,
+    ]
+
+    @extend_schema(
+        operation_id="demands_cancel",
+        tags=["Demands"],
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="Demand cancelled successfully."
+            ),
+            400: OpenApiResponse(
+                description="Demand cancellation business validation failed."
+            ),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(
+                description="The actor is not allowed to cancel this demand."
+            ),
+            404: OpenApiResponse(description="Demand not found."),
+            409: OpenApiResponse(
+                description="Demand cannot be cancelled in its current state."
+            ),
+        },
+    )
+    def post(self, request, pk):
+        demand = self.get_demand_object(request, pk)
+
+        try:
+            cancelled = cancel_demand(
+                demand_id=demand.pk,
+                cancelled_by=request.user,
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+        except DjangoValidationError as exc:
+            if hasattr(exc, "message_dict") and any(
+                key in exc.message_dict
+                for key in (
+                    "status",
+                    "supplier_request",
+                    "commitment",
+                )
+            ):
+                raise DemandConflict(exc.message_dict)
+
+            raise_api_validation_error(exc)
+
+        return Response(
+            {
+                "cancellation_status": "CANCELLED",
+                "demand_id": cancelled.pk,
+                "demand_code": cancelled.demand_code,
             },
             status=status.HTTP_200_OK,
         )

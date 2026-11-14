@@ -948,6 +948,51 @@ class DemandAPITests(APITestCase):
         )
 
 
+    def test_inactive_manager_role_cannot_read_demands(self):
+        manager = self.User.objects.create_user(
+            email="inactive-manager@example.test",
+            full_name="Inactive Manager",
+        )
+        manager_role = Role.objects.create(
+            code=RoleCode.MANAGER,
+            name="Manager",
+        )
+        UserRole.objects.create(
+            user=manager,
+            role=manager_role,
+            is_active=False,
+        )
+
+        self.authenticate(manager)
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_inactive_purchasing_role_cannot_read_demands(self):
+        UserRole.objects.filter(
+            user=self.buyer,
+            role=self.buyer_role,
+        ).update(is_active=False)
+
+        self.assertTrue(
+            UserOutletAccess.objects.filter(
+                user=self.buyer,
+                outlet=self.outlet,
+                is_active=True,
+            ).exists()
+        )
+
+        self.authenticate()
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_403_FORBIDDEN,
+        )
+
     def test_manager_cannot_create_or_update_demands(self):
         demand = self.create_db_demand()
 
@@ -2403,3 +2448,645 @@ class DemandSupplierSelectionServiceTests(DemandServiceTestBase):
             SupplierRequest.objects.filter(demand=self.demand).count(),
             2,
         )
+
+
+class DemandCancelServiceTests(DemandServiceTestBase):
+    """Tests for atomic Demand cancellation and history preservation."""
+
+    def setUp(self):
+        super().setUp()
+        from accounts.models import AuditLog
+        from .services import cancel_demand
+
+        self.AuditLog = AuditLog
+        self.cancel_demand = cancel_demand
+        self.demand = self.create_demand()
+
+    def make_confirmation(self, status, **overrides):
+        values = {
+            "demand": self.demand,
+            "supplier": self.supplier,
+            "confirmation_status": status,
+            "source_mode": SupplierConfirmation.SourceMode.LIVE_API,
+        }
+        values.update(overrides)
+
+        confirmation = SupplierConfirmation(**values)
+        confirmation.full_clean()
+        confirmation.save()
+        return confirmation
+
+    def make_request(
+        self,
+        confirmation,
+        attempt_no=1,
+        status=SupplierRequest.RequestStatus.WAITING,
+    ):
+        responded_at = (
+            django_timezone.now()
+            if status == SupplierRequest.RequestStatus.RESPONDED
+            else None
+        )
+
+        request = SupplierRequest(
+            demand=self.demand,
+            supplier=self.supplier,
+            supplier_confirmation=confirmation,
+            request_code=f"SR-CANCEL-{self.demand.pk}-{attempt_no}",
+            attempt_no=attempt_no,
+            request_status=status,
+            created_by=self.user,
+            responded_at=responded_at,
+        )
+        request.full_clean()
+        request.save()
+        return request
+
+    def make_promise(
+        self,
+        request,
+        confirmed_weight="0.000",
+        line_status=SupplierItemPromise.LineStatus.DECLINED,
+    ):
+        offer = self.create_offer()
+        demand_item = self.demand.items.get(item=self.item)
+
+        promise = SupplierItemPromise(
+            supplier_request=request,
+            demand_item=demand_item,
+            supplier_item=offer,
+            promised_weight_kg=Decimal("10.000"),
+            confirmed_weight_kg=Decimal(confirmed_weight),
+            line_status=line_status,
+            unit_price_vnd_per_kg_snapshot=Decimal("25000.00"),
+            lead_time_hours_snapshot=8,
+        )
+        promise.full_clean()
+        promise.save()
+        return promise
+
+    def mark_submitted(self):
+        self.demand.status = DemandStatus.SUBMITTED
+        self.demand.save(update_fields=["status", "updated_at"])
+
+    def test_draft_without_request_can_be_cancelled(self):
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.NOT_REQUESTED,
+        )
+
+        cancelled = self.cancel_demand(
+            demand_id=self.demand.pk,
+            cancelled_by=self.user,
+            ip_address="127.0.0.1",
+        )
+
+        self.demand.refresh_from_db()
+        confirmation.refresh_from_db()
+
+        self.assertEqual(cancelled.pk, self.demand.pk)
+        self.assertEqual(self.demand.status, DemandStatus.CANCELLED)
+        self.assertEqual(
+            confirmation.confirmation_status,
+            SupplierConfirmation.ConfirmationStatus.NOT_REQUESTED,
+        )
+        self.assertEqual(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).count(),
+            1,
+        )
+
+    def test_draft_with_supplier_request_cannot_be_cancelled(self):
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PENDING,
+        )
+        request = self.make_request(confirmation)
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.demand.refresh_from_db()
+        request.refresh_from_db()
+
+        self.assertEqual(self.demand.status, DemandStatus.DRAFT)
+        self.assertEqual(
+            request.request_status,
+            SupplierRequest.RequestStatus.WAITING,
+        )
+        self.assertFalse(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).exists()
+        )
+
+    def test_submitted_with_waiting_request_cannot_be_cancelled(self):
+        self.mark_submitted()
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PENDING,
+        )
+        request = self.make_request(confirmation)
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.demand.refresh_from_db()
+        self.assertEqual(self.demand.status, DemandStatus.SUBMITTED)
+        self.assertEqual(
+            request.request_status,
+            SupplierRequest.RequestStatus.WAITING,
+        )
+
+    def test_submitted_with_expired_request_cannot_be_cancelled(self):
+        self.mark_submitted()
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PENDING,
+        )
+        request = self.make_request(
+            confirmation,
+            status=SupplierRequest.RequestStatus.EXPIRED,
+        )
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.demand.refresh_from_db()
+        self.assertEqual(self.demand.status, DemandStatus.SUBMITTED)
+        self.assertEqual(
+            request.request_status,
+            SupplierRequest.RequestStatus.EXPIRED,
+        )
+
+    def test_submitted_declined_latest_attempt_can_be_cancelled_and_history_is_preserved(self):
+        self.mark_submitted()
+
+        old_confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PENDING,
+        )
+        old_request = self.make_request(
+            old_confirmation,
+            attempt_no=1,
+            status=SupplierRequest.RequestStatus.EXPIRED,
+        )
+
+        declined_confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.DECLINED,
+            recorded_at=django_timezone.now(),
+        )
+        latest_request = self.make_request(
+            declined_confirmation,
+            attempt_no=2,
+            status=SupplierRequest.RequestStatus.RESPONDED,
+        )
+        promise = self.make_promise(latest_request)
+
+        self.cancel_demand(
+            demand_id=self.demand.pk,
+            cancelled_by=self.user,
+        )
+
+        self.demand.refresh_from_db()
+        old_request.refresh_from_db()
+        latest_request.refresh_from_db()
+        old_confirmation.refresh_from_db()
+        declined_confirmation.refresh_from_db()
+        promise.refresh_from_db()
+
+        self.assertEqual(self.demand.status, DemandStatus.CANCELLED)
+        self.assertEqual(
+            SupplierRequest.objects.filter(demand=self.demand).count(),
+            2,
+        )
+        self.assertEqual(
+            SupplierConfirmation.objects.filter(demand=self.demand).count(),
+            2,
+        )
+        self.assertTrue(
+            SupplierItemPromise.objects.filter(pk=promise.pk).exists()
+        )
+        self.assertEqual(
+            old_request.request_status,
+            SupplierRequest.RequestStatus.EXPIRED,
+        )
+        self.assertEqual(
+            latest_request.request_status,
+            SupplierRequest.RequestStatus.RESPONDED,
+        )
+        self.assertEqual(
+            declined_confirmation.confirmation_status,
+            SupplierConfirmation.ConfirmationStatus.DECLINED,
+        )
+        self.assertEqual(
+            promise.confirmed_weight_kg,
+            Decimal("0.000"),
+        )
+
+    def test_unreleased_partial_commitment_prevents_cancellation(self):
+        self.mark_submitted()
+
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PARTIAL,
+            ready_date=self.demand.requested_date,
+            recorded_at=django_timezone.now(),
+        )
+        request = self.make_request(
+            confirmation,
+            status=SupplierRequest.RequestStatus.RESPONDED,
+        )
+        promise = self.make_promise(
+            request,
+            confirmed_weight="5.000",
+            line_status=SupplierItemPromise.LineStatus.PARTIAL,
+        )
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.demand.refresh_from_db()
+        promise.refresh_from_db()
+
+        self.assertEqual(self.demand.status, DemandStatus.SUBMITTED)
+        self.assertEqual(
+            promise.confirmed_weight_kg,
+            Decimal("5.000"),
+        )
+        self.assertIsNone(confirmation.commitment_released_at)
+        self.assertFalse(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).exists()
+        )
+
+    def test_only_demand_creator_can_cancel(self):
+        another_user = self.User.objects.create_user(
+            email="another-cancel-user@example.test",
+            full_name="Another User",
+        )
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=another_user,
+            )
+
+        self.demand.refresh_from_db()
+        self.assertEqual(self.demand.status, DemandStatus.DRAFT)
+
+    def test_cancelled_demand_cannot_be_cancelled_again(self):
+        self.demand.status = DemandStatus.CANCELLED
+        self.demand.save(update_fields=["status", "updated_at"])
+
+        with self.assertRaises(ValidationError):
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.assertEqual(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).count(),
+            0,
+        )
+
+    def test_audit_log_failure_rolls_back_cancellation(self):
+        with patch(
+            "demands.services.AuditLog.objects.create",
+            side_effect=RuntimeError("AuditLog unavailable"),
+        ):
+            with self.assertRaises(RuntimeError):
+                self.cancel_demand(
+                    demand_id=self.demand.pk,
+                    cancelled_by=self.user,
+                )
+
+        self.demand.refresh_from_db()
+        self.assertEqual(self.demand.status, DemandStatus.DRAFT)
+        self.assertFalse(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).exists()
+        )
+
+    def test_partial_confirmation_without_promise_blocks_cancellation(self):
+        self.mark_submitted()
+
+        confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PARTIAL,
+            ready_date=self.demand.requested_date,
+            recorded_at=django_timezone.now(),
+        )
+        self.make_request(
+            confirmation,
+            status=SupplierRequest.RequestStatus.RESPONDED,
+        )
+
+        with self.assertRaises(ValidationError) as context:
+            self.cancel_demand(
+                demand_id=self.demand.pk,
+                cancelled_by=self.user,
+            )
+
+        self.assertIn("commitment", context.exception.message_dict)
+
+        self.demand.refresh_from_db()
+        self.assertEqual(self.demand.status, DemandStatus.SUBMITTED)
+        self.assertFalse(
+            self.AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(self.demand.pk),
+            ).exists()
+        )
+
+    def test_released_partial_history_does_not_block_declined_cancellation(self):
+        self.mark_submitted()
+
+        released_confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.PARTIAL,
+            ready_date=self.demand.requested_date,
+            recorded_at=django_timezone.now(),
+            commitment_released_at=django_timezone.now(),
+            commitment_release_note="Commitment released for replacement.",
+        )
+        released_request = self.make_request(
+            released_confirmation,
+            attempt_no=1,
+            status=SupplierRequest.RequestStatus.RESPONDED,
+        )
+        promise = self.make_promise(
+            released_request,
+            confirmed_weight="5.000",
+            line_status=SupplierItemPromise.LineStatus.PARTIAL,
+        )
+
+        declined_confirmation = self.make_confirmation(
+            SupplierConfirmation.ConfirmationStatus.DECLINED,
+            recorded_at=django_timezone.now(),
+        )
+        self.make_request(
+            declined_confirmation,
+            attempt_no=2,
+            status=SupplierRequest.RequestStatus.RESPONDED,
+        )
+
+        self.cancel_demand(
+            demand_id=self.demand.pk,
+            cancelled_by=self.user,
+        )
+
+        self.demand.refresh_from_db()
+        promise.refresh_from_db()
+
+        self.assertEqual(self.demand.status, DemandStatus.CANCELLED)
+        self.assertEqual(
+            promise.confirmed_weight_kg,
+            Decimal("5.000"),
+        )
+        self.assertIsNotNone(
+            released_confirmation.commitment_released_at
+        )
+        self.assertEqual(
+            SupplierRequest.objects.filter(demand=self.demand).count(),
+            2,
+        )
+
+
+class DemandCancelAPITests(APITestCase):
+    """API tests for POST /api/demands/{id}/cancel."""
+
+    def setUp(self):
+        self.User = get_user_model()
+
+        self.buyer = self.User.objects.create_user(
+            email="cancel-api-buyer@example.test",
+            full_name="Cancel API Buyer",
+        )
+        self.buyer_role = Role.objects.create(
+            code=RoleCode.PURCHASING_STAFF,
+            name="Purchasing Staff",
+        )
+        UserRole.objects.create(
+            user=self.buyer,
+            role=self.buyer_role,
+        )
+
+        self.outlet = Outlet.objects.create(
+            outlet_code="OUT-CANCEL-001",
+            outlet_name="Cancel API Outlet",
+            address="Da Nang",
+        )
+        self.other_outlet = Outlet.objects.create(
+            outlet_code="OUT-CANCEL-002",
+            outlet_name="Other Cancel Outlet",
+            address="Da Nang",
+        )
+        UserOutletAccess.objects.create(
+            user=self.buyer,
+            outlet=self.outlet,
+        )
+
+        self.supplier = Supplier.objects.create(
+            supplier_code="SUP-CANCEL-001",
+            supplier_name="Cancel API Supplier",
+        )
+        self.category = CargoCategory.objects.create(
+            category_code="CAT-CANCEL-001",
+            category_name="Cancel API Category",
+        )
+        self.item = Item.objects.create(
+            item_code="ITM-CANCEL-001",
+            item_name="Cancel API Item",
+            cargo_category=self.category,
+            weight_unit="KG",
+            is_active=True,
+        )
+
+    def cancel_url(self, demand):
+        return f"/api/demands/{demand.pk}/cancel"
+
+    def create_db_demand(self, *, outlet=None, created_by=None):
+        return create_draft_demand(
+            demand_code=f"DD-CANCEL-API-{self.User.objects.count()}",
+            supplier_id=self.supplier.pk,
+            outlet_id=(outlet or self.outlet).pk,
+            created_by=created_by or self.buyer,
+            requested_date=date(2026, 11, 16),
+            items=[
+                {
+                    "item_id": self.item.pk,
+                    "required_weight_kg": "10.000",
+                }
+            ],
+        )
+
+    def test_cancel_success_returns_expected_payload(self):
+        from accounts.models import AuditLog
+
+        demand = self.create_db_demand()
+        self.client.force_authenticate(user=self.buyer)
+
+        response = self.client.post(self.cancel_url(demand))
+
+        demand.refresh_from_db()
+
+        self.assertEqual(response.status_code, http_status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "cancellation_status": "CANCELLED",
+                "demand_id": demand.pk,
+                "demand_code": demand.demand_code,
+            },
+        )
+        self.assertEqual(demand.status, DemandStatus.CANCELLED)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="DEMAND_CANCELLED",
+                entity_id=str(demand.pk),
+            ).exists()
+        )
+
+    def test_cancel_requires_authentication(self):
+        demand = self.create_db_demand()
+
+        response = self.client.post(self.cancel_url(demand))
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_non_creator_cannot_cancel_demand(self):
+        demand_creator = self.User.objects.create_user(
+            email="cancel-api-other-creator@example.test",
+            full_name="Other Demand Creator",
+        )
+        demand = self.create_db_demand(created_by=demand_creator)
+
+        self.client.force_authenticate(user=self.buyer)
+        response = self.client.post(self.cancel_url(demand))
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_403_FORBIDDEN,
+        )
+
+        demand.refresh_from_db()
+        self.assertEqual(demand.status, DemandStatus.DRAFT)
+
+    def test_demand_outside_active_outlet_scope_returns_404(self):
+        demand = self.create_db_demand(outlet=self.other_outlet)
+
+        self.client.force_authenticate(user=self.buyer)
+        response = self.client.post(self.cancel_url(demand))
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_404_NOT_FOUND,
+        )
+
+        demand.refresh_from_db()
+        self.assertEqual(demand.status, DemandStatus.DRAFT)
+
+    def test_business_conflict_returns_409(self):
+        demand = self.create_db_demand()
+
+        confirmation = SupplierConfirmation.objects.create(
+            demand=demand,
+            supplier=self.supplier,
+            confirmation_status=(
+                SupplierConfirmation.ConfirmationStatus.PENDING
+            ),
+            source_mode=SupplierConfirmation.SourceMode.LIVE_API,
+        )
+
+        request = SupplierRequest(
+            demand=demand,
+            supplier=self.supplier,
+            supplier_confirmation=confirmation,
+            request_code=f"SR-CANCEL-API-{demand.pk}",
+            attempt_no=1,
+            request_status=SupplierRequest.RequestStatus.WAITING,
+            created_by=self.buyer,
+        )
+        request.full_clean()
+        request.save()
+
+        self.client.force_authenticate(user=self.buyer)
+        response = self.client.post(self.cancel_url(demand))
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_409_CONFLICT,
+        )
+
+        demand.refresh_from_db()
+        request.refresh_from_db()
+
+        self.assertEqual(demand.status, DemandStatus.DRAFT)
+        self.assertEqual(
+            request.request_status,
+            SupplierRequest.RequestStatus.WAITING,
+        )
+
+    def test_manager_role_cannot_cancel(self):
+            manager_role, _ = Role.objects.get_or_create(
+                code=RoleCode.MANAGER,
+                defaults={
+                    "name": "Manager",
+                    "is_active": True,
+                },
+            )
+
+            user_role = UserRole.objects.get(user=self.buyer)
+            user_role.role = manager_role
+            user_role.save(update_fields=["role"])
+
+            demand = self.create_db_demand(created_by=self.buyer)
+
+            self.client.force_authenticate(user=self.buyer)
+            response = self.client.post(self.cancel_url(demand))
+
+            self.assertEqual(
+                response.status_code,
+                http_status.HTTP_403_FORBIDDEN,
+            )
+
+            demand.refresh_from_db()
+            self.assertEqual(demand.status, DemandStatus.DRAFT)
+
+
+    def test_user_without_purchasing_staff_role_cannot_cancel(self):
+        user = self.User.objects.create_user(
+            email="no-role@example.test",
+            full_name="User Without Purchasing Role",
+        )
+
+        demand = self.create_db_demand(created_by=user)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post(self.cancel_url(demand))
+
+        self.assertEqual(
+            response.status_code,
+            http_status.HTTP_403_FORBIDDEN,
+        )
+
+        demand.refresh_from_db()
+        self.assertEqual(demand.status, DemandStatus.DRAFT)

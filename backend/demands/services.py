@@ -26,6 +26,7 @@ from .models import (
     SupplierRequest,
 )
 
+from accounts.models import AuditLog
 
 def _generate_demand_code():
     """Return DD-YYYYMMDD-XXXXXXXX using the local creation date."""
@@ -565,6 +566,155 @@ def _sync_selected_sourcing_options(demand, lines, offers_by_item, now):
         option.full_clean()
         option.save()
 
+@transaction.atomic
+def cancel_demand(*, demand_id, cancelled_by, ip_address=None):
+    """
+    Cancel a DRAFT or eligible SUBMITTED Demand atomically.
+
+    Preserve all SupplierRequest, SupplierConfirmation and
+    SupplierItemPromise history.
+    """
+    try:
+        demand = DeliveryDemand.objects.select_for_update().get(
+            pk=demand_id
+        )
+    except DeliveryDemand.DoesNotExist:
+        raise ValidationError({"demand": "Demand does not exist."})
+
+    if demand.created_by_id != getattr(cancelled_by, "pk", None):
+        raise ValidationError({
+            "created_by": "Only the Demand creator may cancel this Demand."
+        })
+
+    if demand.status not in {
+        DemandStatus.DRAFT,
+        DemandStatus.SUBMITTED,
+    }:
+        raise ValidationError({
+            "status": "This Demand cannot be cancelled in its current status."
+        })
+
+    # Lock every request belonging to this Demand.
+    requests = list(
+        SupplierRequest.objects.select_for_update()
+        .filter(demand_id=demand.pk)
+        .order_by("pk")
+    )
+
+    request_ids = [request.pk for request in requests]
+
+    # Lock every confirmation, including standalone NOT_REQUESTED records.
+    confirmations = list(
+        SupplierConfirmation.objects.select_for_update()
+        .filter(demand_id=demand.pk)
+        .order_by("pk")
+    )
+
+    # Lock all promise rows and calculate confirmed quantities by request.
+    promises = list(
+        SupplierItemPromise.objects.select_for_update()
+        .filter(supplier_request_id__in=request_ids)
+        .order_by("pk")
+    )
+
+    confirmed_weights = {}
+    for promise in promises:
+        confirmed_weights[promise.supplier_request_id] = (
+            confirmed_weights.get(promise.supplier_request_id, Decimal("0"))
+            + promise.confirmed_weight_kg
+        )
+
+    confirmations_by_id = {
+        confirmation.pk: confirmation
+        for confirmation in confirmations
+    }
+
+    # Any positive, unreleased CONFIRMED/PARTIAL commitment blocks Cancel.
+    for request in requests:
+        confirmation = confirmations_by_id.get(
+            request.supplier_confirmation_id
+        )
+        if confirmation is None:
+            raise ValidationError({
+                "supplier_request": "Supplier confirmation is missing."
+            })
+
+        confirmed_weight = confirmed_weights.get(
+            request.pk, Decimal("0")
+        )
+
+        if confirmation.confirmation_status in {
+            SupplierConfirmation.ConfirmationStatus.CONFIRMED,
+            SupplierConfirmation.ConfirmationStatus.PARTIAL,
+        }:
+            if confirmed_weight <= 0:
+                raise ValidationError({
+                    "commitment": (
+                        "Supplier confirmation has no valid confirmed "
+                        "quantity. Cancellation is blocked due to "
+                        "inconsistent commitment data."
+                    )
+                })
+
+            if confirmation.commitment_released_at is None:
+                raise ValidationError({
+                    "commitment": (
+                        "An unreleased supplier commitment prevents cancellation."
+                    )
+                })
+
+    if demand.status == DemandStatus.DRAFT:
+        if requests:
+            raise ValidationError({
+                "supplier_request": (
+                    "A DRAFT Demand with SupplierRequest history cannot be cancelled."
+                )
+            })
+
+    else:
+        if not requests:
+            raise ValidationError({
+                "supplier_request": (
+                    "A SUBMITTED Demand must have SupplierRequest history."
+                )
+            })
+
+        latest_request = max(
+            requests,
+            key=lambda request: (request.attempt_no, request.pk),
+        )
+        latest_confirmation = confirmations_by_id[
+            latest_request.supplier_confirmation_id
+        ]
+
+        if (
+            latest_request.request_status
+            != SupplierRequest.RequestStatus.RESPONDED
+            or latest_confirmation.confirmation_status
+            != SupplierConfirmation.ConfirmationStatus.DECLINED
+        ):
+            raise ValidationError({
+                "supplier_request": (
+                    "A SUBMITTED Demand can only be cancelled after "
+                    "the latest SupplierRequest is RESPONDED and DECLINED."
+                )
+            })
+
+    old_status = demand.status
+    demand.status = DemandStatus.CANCELLED
+    demand.save(update_fields=["status", "updated_at"])
+
+    AuditLog.objects.create(
+        actor_user=cancelled_by,
+        action="DEMAND_CANCELLED",
+        entity_type="DEMAND",
+        entity_id=str(demand.pk),
+        old_values={"status": old_status},
+        new_values={"status": DemandStatus.CANCELLED},
+        ip_address=ip_address,
+    )
+
+    return demand
 
 def _latest_supplier_request_for_update(demand):
     return (

@@ -6,6 +6,7 @@ from .views import (
     DemandStatusView,
     DemandSubmitView,
     DemandSelectSupplierView,
+    DemandCancelView,
 )
 
 urlpatterns = [
@@ -25,5 +26,10 @@ urlpatterns = [
         "<int:pk>/status/",
         DemandStatusView.as_view(),
         name="demand-status",
+    ),
+    path(
+        "<int:pk>/cancel",
+        DemandCancelView.as_view(),
+        name="demand-cancel",
     ),
 ]
