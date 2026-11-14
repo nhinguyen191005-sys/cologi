@@ -85,7 +85,11 @@ def demand_queryset_for_user(user):
     if is_manager:
         return queryset
 
-    return filter_queryset_by_outlet_access(queryset, user)
+    # Purchasing Staff can only access demands they created,
+    # within their active Outlet access scope.
+    return filter_queryset_by_outlet_access(
+        queryset.filter(created_by=user), user
+    )
 
 
 class DemandObjectMixin:

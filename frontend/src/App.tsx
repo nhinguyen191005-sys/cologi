@@ -2,6 +2,8 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { useAuth } from './contexts/useAuth'
 import AppLayout from './components/layout/AppLayout'
 import DemandsPage from './pages/DemandsPage'
+import DemandFormPage from './pages/DemandFormPage'
+import DemandDetailPage from './pages/DemandDetailPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 
@@ -34,6 +36,9 @@ export default function App() {
 
           <Route element={<PurchasingRoute />}>
             <Route path="/demands" element={<DemandsPage />} />
+            <Route path="/demands/new" element={<DemandFormPage />} />
+            <Route path="/demands/:id/edit" element={<DemandFormPage />} />
+            <Route path="/demands/:id" element={<DemandDetailPage />} />
           </Route>
         </Route>
       </Route>

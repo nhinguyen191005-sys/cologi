@@ -103,10 +103,11 @@ class DemandRoleOutletPermission(BasePermission):
         if not has_outlet_scope:
             return False
 
-        if request.method == "PATCH":
+        # Purchasing Staff may only read or modify their own demands.
+        if request.method in SAFE_METHODS or request.method == "PATCH":
             return obj.created_by_id == request.user.pk
 
-        return request.method in SAFE_METHODS
+        return False
 
 
 class DemandSubmitPermission(BasePermission):

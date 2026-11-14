@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../services/api/client'
 import { listDemands } from '../services/api/demands'
@@ -49,7 +49,7 @@ export default function DemandsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  async function loadDemands() {
+  const loadDemands = useCallback(async () => {
     setIsLoading(true)
     setError('')
     try {
@@ -60,10 +60,25 @@ export default function DemandsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    void loadDemands()
+    let active = true
+
+    listDemands()
+      .then((data) => {
+        if (active) setDemands(data)
+      })
+      .catch((loadError) => {
+        if (active) setError(getErrorMessage(loadError))
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
   }, [])
 
   const filteredDemands = useMemo(() => {

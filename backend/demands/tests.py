@@ -802,6 +802,41 @@ class DemandAPITests(APITestCase):
         self.assertIn(in_scope.pk, returned_ids)
         self.assertNotIn(outside_scope.pk, returned_ids)
 
+        # A second Purchasing Staff member sharing the same Outlet
+        # must not see the first member's demand.
+        other_buyer = self.User.objects.create_user(
+            email="api-shared-outlet-buyer@example.test",
+            full_name="Shared Outlet Buyer",
+        )
+        UserRole.objects.create(
+            user=other_buyer,
+            role=self.buyer_role,
+        )
+        UserOutletAccess.objects.create(
+            user=other_buyer,
+            outlet=self.outlet,
+        )
+        other_demand = self.create_db_demand(
+            created_by=other_buyer,
+            demand_code="DD-API-SHARED-OUTLET-001",
+        )
+
+        self.authenticate()
+        list_response = self.client.get(self.list_url)
+        returned_ids = {row["id"] for row in list_response.data}
+        self.assertNotIn(other_demand.pk, returned_ids)
+
+        own_detail = self.client.get(f"{self.list_url}{in_scope.pk}/")
+        self.assertEqual(own_detail.status_code, http_status.HTTP_200_OK)
+
+        other_detail = self.client.get(
+            f"{self.list_url}{other_demand.pk}/"
+        )
+        self.assertEqual(
+            other_detail.status_code,
+            http_status.HTTP_404_NOT_FOUND,
+        )
+
         detail_response = self.client.get(
             f"{self.list_url}{outside_scope.pk}/"
         )
@@ -866,7 +901,7 @@ class DemandAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            http_status.HTTP_403_FORBIDDEN,
+            http_status.HTTP_404_NOT_FOUND,
         )
 
         demand.refresh_from_db()
@@ -1306,7 +1341,7 @@ class DemandAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            http_status.HTTP_403_FORBIDDEN,
+            http_status.HTTP_404_NOT_FOUND,
         )
         self.assertEqual(SupplierRequest.objects.count(), 0)
 
@@ -1600,7 +1635,7 @@ class DemandAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            http_status.HTTP_403_FORBIDDEN,
+            http_status.HTTP_404_NOT_FOUND,
         )
         self.assertEqual(DemandSupplierSelection.objects.count(), 0)
 
@@ -2984,7 +3019,7 @@ class DemandCancelAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            http_status.HTTP_403_FORBIDDEN,
+            http_status.HTTP_404_NOT_FOUND,
         )
 
         demand.refresh_from_db()
