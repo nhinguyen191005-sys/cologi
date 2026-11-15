@@ -1,0 +1,1503 @@
+
+/* ====================================
+   COLOGI LOGIN - MINIMAL MOTION DESIGN
+==================================== */
+
+.cg-login {
+  --cg-dark: #123C1B;
+  --cg-emerald: #1E6B3A;
+  --cg-gold: #D5B85A;
+  --cg-mint: #4BB169;
+
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.05fr)
+    minmax(420px, .95fr);
+
+  min-height: 100vh;
+  min-height: 100svh;
+
+  background: #F6F9F5;
+  color: #183627;
+  font-family: inherit;
+}
+
+.cg-login * {
+  box-sizing: border-box;
+}
+
+/* ============================
+   LEFT - BRAND SECTION
+============================ */
+
+.cg-login-story {
+  position: relative;
+  isolation: isolate;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 670px;
+  padding: clamp(28px, 4vw, 54px);
+
+  background: linear-gradient(
+    135deg,
+    #102E1A 0%,
+    #123C1B 38%,
+    #1E6B3A 100%
+  );
+
+  color: white;
+}
+
+/* ANIMATED AURORA */
+
+.cg-login-story::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  inset: -30%;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 65% 58%,
+      rgba(75, 177, 105, .24),
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 15% 5%,
+      rgba(213, 184, 90, .12),
+      transparent 32%
+    );
+
+  animation: cg-aurora 11s ease-in-out
+    infinite alternate;
+}
+
+/* DOTTED GRID */
+
+.cg-story-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  pointer-events: none;
+  opacity: .16;
+
+  background-image:
+    radial-gradient(
+      rgba(230, 255, 236, .8) .8px,
+      transparent .8px
+    );
+
+  background-size: 24px 24px;
+
+  mask-image: linear-gradient(
+    110deg,
+    transparent 8%,
+    #000 90%
+  );
+}
+
+/* LOGO */
+.cg-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  flex-shrink: 0;
+
+  width: 190px;
+  height: 126px;
+  border-radius: 24px;
+  overflow: hidden;
+
+  border: 1px solid rgba(213, 184, 90, 0.45);
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 245, 220, 0.34) 0%,
+    rgba(255, 238, 190, 0.22) 55%,
+    rgba(255, 230, 170, 0.16) 100%
+  );
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.18),
+    0 0 20px rgba(213,184,90,0.16);
+}
+/* lớp ánh sáng nhẹ */
+.cg-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28), transparent 38%),
+    radial-gradient(circle at 70% 75%, rgba(213,184,90,0.12), transparent 42%);
+}
+.cg-brand img {
+  position: relative;
+  z-index: 1;
+  display: block;
+
+  width: 145px;
+  height: 95px;
+  object-fit: contain;
+  max-width: none;
+
+  transform: scale(1.18);
+
+  filter:
+    brightness(1.08)
+    contrast(1.08)
+    saturate(1.08)
+    drop-shadow(0 2px 10px rgba(255, 240, 200, 0.16));
+}
+
+.cg-brand:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.22),
+    0 0 28px rgba(213, 184, 90, 0.18);
+}
+
+/* MAIN TEXT */
+
+.cg-story-body {
+  width: 100%;
+  max-width: 590px;
+
+  margin: auto 0;
+  padding-top: 44px;
+}
+
+.cg-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+
+  color: #E9D799;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.cg-eyebrow i {
+  width: 19px;
+  height: 2px;
+  background: var(--cg-gold);
+}
+
+.cg-story-body h1 {
+  margin: 20px 0 16px;
+
+  color: white;
+  font-size: clamp(38px, 4vw, 60px);
+  line-height: 1.12;
+
+  letter-spacing: -2px;
+  font-weight: 800;
+}
+
+.cg-story-body h1 em {
+  color: #E3CB7D;
+  font-style: normal;
+}
+
+.cg-story-body > p {
+  max-width: 460px;
+  margin: 0;
+
+  color: #DAEDDF;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* ============================
+   ANIMATED LOGISTICS NETWORK
+============================ */
+
+.cg-network {
+  position: relative;
+
+  width: min(100%, 460px);
+  height: 290px;
+
+  margin: 25px auto 0;
+}
+
+/* MOVING CONNECTION LINES */
+
+.cg-network-lines {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+}
+
+.cg-network-lines path {
+  stroke: #D7EAC5;
+  stroke-width: 1.7;
+  stroke-dasharray: 5 9;
+  opacity: .55;
+
+  animation: cg-dash 13s linear infinite;
+}
+
+/* CENTRAL CIRCLE */
+
+.cg-core {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+
+  width: 116px;
+  height: 116px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+  border: 1px solid rgba(233, 255, 235, .55);
+
+  background: linear-gradient(
+    140deg,
+    rgba(87, 182, 116, .5),
+    rgba(10, 65, 36, .84)
+  );
+
+  box-shadow:
+    0 0 0 15px rgba(255, 255, 255, .035),
+    0 0 0 34px rgba(255, 255, 255, .023),
+    0 15px 50px rgba(0, 24, 9, .28);
+
+  animation: cg-core-pulse
+    5s ease-in-out infinite;
+}
+
+.cg-core span {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.cg-core small {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #ECD791;
+}
+
+/* FLOATING GLASS CARDS */
+
+.cg-flow-node {
+  position: absolute;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 12px 15px;
+
+  border: 1px solid rgba(255, 255, 255, .23);
+  border-radius: 13px;
+
+  background: rgba(17, 65, 36, .58);
+  color: white;
+
+  box-shadow:
+    0 12px 30px rgba(2, 25, 10, .2);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  animation: cg-card-float
+    6s ease-in-out infinite;
+}
+
+.cg-node-one {
+  left: 0;
+  top: 5%;
+}
+
+.cg-node-two {
+  right: 0;
+  top: 5%;
+  animation-delay: -2s;
+}
+
+.cg-node-three {
+  left: 50%;
+  bottom: 0;
+
+  transform: translateX(-50%);
+
+  animation:
+    cg-bottom-float 6s ease-in-out infinite -4s;
+}
+
+.cg-node-number {
+  display: grid;
+  place-items: center;
+
+  width: 30px;
+  height: 30px;
+
+  border: 1px solid rgba(213, 184, 90, .4);
+  border-radius: 9px;
+
+  color: #F2D887;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cg-flow-node strong,
+.cg-flow-node small {
+  display: block;
+}
+
+.cg-flow-node strong {
+  font-size: 12px;
+}
+
+.cg-flow-node small {
+  margin-top: 3px;
+  font-size: 10px;
+  color: #B9D9C3;
+}
+
+/* LEFT FOOTER */
+
+.cg-story-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  color: rgba(230, 251, 229, .62);
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+/* ============================
+   RIGHT - LOGIN
+============================ */
+
+.cg-login-form-side {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+
+  padding: 36px clamp(24px, 4vw, 72px);
+
+  background:
+    radial-gradient(
+      circle at 90% 15%,
+      #E4F2E8 0%,
+      transparent 34%
+    ),
+    #F8FAF7;
+}
+
+/* GLASS CARD */
+
+.cg-login-card {
+  width: 100%;
+  max-width: 450px;
+
+  padding: 42px 38px 34px;
+
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .9);
+
+  background: rgba(255, 255, 255, .79);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 24px 65px rgba(18, 60, 27, .1),
+    0 2px 8px rgba(18, 60, 27, .025);
+
+  animation:
+    cg-form-appear .7s
+    cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* LOCK ICON */
+
+.cg-welcome-symbol {
+  display: grid;
+  place-items: center;
+
+  width: 52px;
+  height: 52px;
+
+  margin-bottom: 27px;
+
+  border-radius: 16px;
+  border: 1px solid #D4E7D8;
+
+  color: var(--cg-emerald);
+
+  background: linear-gradient(
+    145deg,
+    #EAF7ED,
+    #D5EBDA
+  );
+}
+
+.cg-form-kicker {
+  color: #4E9165;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.cg-login-card h2 {
+  margin: 10px 0 9px;
+
+  color: var(--cg-dark);
+
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 800;
+  letter-spacing: -1.35px;
+  line-height: 1.2;
+}
+
+.cg-login-card h2 span {
+  color: var(--cg-emerald);
+}
+
+.cg-form-intro {
+  max-width: 340px;
+  margin: 0;
+
+  color: #788B7C;
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+/* ============================
+   FORM INPUTS
+============================ */
+
+.cg-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.cg-form label {
+  margin-top: 9px;
+
+  color: #244832;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.cg-field {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-height: 51px;
+  padding: 0 14px;
+
+  border: 1px solid #DCE9DD;
+  border-radius: 12px;
+
+  background: rgba(247, 250, 247, .92);
+
+  transition:
+    border-color .2s,
+    background .2s,
+    box-shadow .2s;
+}
+
+.cg-field:focus-within {
+  border-color: #4BB169;
+  background: white;
+
+  box-shadow:
+    0 0 0 4px rgba(75, 177, 105, .12);
+}
+
+.cg-field-icon {
+  width: 18px;
+  flex: none;
+
+  color: #6B9E79;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cg-field input {
+  flex: 1;
+
+  width: 100%;
+  min-width: 0;
+  height: 50px;
+
+  padding: 0;
+
+  outline: none;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+
+  color: #1B3927;
+  font-size: 13px;
+}
+
+.cg-field input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cg-field input::placeholder {
+  color: #9CAC9E;
+}
+
+.cg-show-password {
+  padding: 8px 1px 8px 8px;
+
+  border: 0;
+  background: none;
+
+  color: #44835B;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cg-show-password:hover {
+  color: #123C1B;
+}
+
+/* OPTIONS */
+
+.cg-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  margin: 6px 0 4px;
+
+  color: #819284;
+  font-size: 11px;
+}
+
+.cg-form-options button {
+  padding: 3px 0;
+
+  border: 0;
+  background: none;
+
+  color: #1E6B3A;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cg-form-options button:hover {
+  text-decoration: underline;
+}
+
+/* HELP + ERROR */
+
+.cg-help-message,
+.cg-login-error {
+  margin: 2px 0;
+  padding: 12px 13px;
+
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.cg-help-message {
+  background: #EDF6EF;
+  color: #275E39;
+  border: 1px solid #CFE7D4;
+}
+
+.cg-login-error {
+  background: #FFF2F0;
+  color: #AD342C;
+  border: 1px solid #F1C5C0;
+}
+
+/* ============================
+   ANIMATED LOGIN BUTTON
+============================ */
+
+.cg-login-submit {
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 51px;
+
+  margin-top: 8px;
+  padding: 0 19px;
+
+  border: 0;
+  border-radius: 12px;
+
+  color: white;
+  background: linear-gradient(
+    110deg,
+    #123C1B,
+    #1E6B3A
+  );
+
+  box-shadow:
+    0 10px 23px rgba(18, 60, 27, .18);
+
+  font-size: 13px;
+  font-weight: 800;
+
+  transition:
+    transform .2s,
+    box-shadow .2s;
+}
+
+/* SWEEP LIGHT ANIMATION */
+
+.cg-login-submit::after {
+  content: "";
+
+  position: absolute;
+  inset: 0 auto 0 -80%;
+
+  width: 35%;
+
+  transform: skewX(-24deg);
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, .18),
+    transparent
+  );
+
+  transition: left .55s ease;
+  pointer-events: none;
+}
+
+.cg-login-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 29px rgba(18, 60, 27, .23);
+}
+
+.cg-login-submit:hover:not(:disabled)::after {
+  left: 140%;
+}
+
+.cg-submit-arrow {
+  font-size: 23px;
+  line-height: 1;
+
+  transition: transform .2s;
+}
+
+.cg-login-submit:hover .cg-submit-arrow {
+  transform: translateX(4px);
+}
+
+.cg-login-submit:disabled {
+  opacity: .7;
+  cursor: wait;
+}
+
+/* BOTTOM TEXT */
+
+.cg-login-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  margin-top: 28px;
+  padding-top: 21px;
+
+  border-top: 1px solid #E5EDE7;
+
+  color: #829687;
+  font-size: 10px;
+  text-align: center;
+}
+
+.cg-safe-dot {
+  width: 7px;
+  height: 7px;
+
+  flex: none;
+  border-radius: 50%;
+  background: var(--cg-mint);
+}
+
+.cg-login-copyright {
+  margin: 0;
+
+  color: #9AAB9E;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ============================
+   KEYFRAME ANIMATIONS
+============================ */
+
+/* Slow moving light behind illustration */
+
+@keyframes cg-aurora {
+  from {
+    transform: translate(-2%, -1%) rotate(-3deg);
+  }
+
+  to {
+    transform: translate(2%, 2%) rotate(3deg);
+  }
+}
+
+/* Flowing connection lines */
+
+@keyframes cg-dash {
+  to {
+    stroke-dashoffset: -170;
+  }
+}
+
+/* Central circle subtle pulse */
+
+@keyframes cg-core-pulse {
+  50% {
+    box-shadow:
+      0 0 0 22px rgba(255, 255, 255, .025),
+      0 0 0 38px rgba(255, 255, 255, .012),
+      0 16px 55px rgba(0, 24, 9, .3);
+  }
+}
+
+/* Floating glass cards */
+
+@keyframes cg-card-float {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes cg-bottom-float {
+  50% {
+    transform: translate(-50%, -7px);
+  }
+}
+
+/* Login form entrance */
+
+@keyframes cg-form-appear {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================
+   RESPONSIVE
+============================ */
+
+@media (max-width: 1050px) {
+  .cg-login {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(390px, 1fr);
+  }
+
+  .cg-login-story {
+    padding: 30px;
+  }
+
+  .cg-story-body h1 {
+    font-size: 42px;
+  }
+
+  .cg-login-form-side {
+    padding: 28px;
+  }
+
+  .cg-login-card {
+    padding: 34px 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  .cg-login {
+    display: block;
+  }
+
+  .cg-login-story {
+    min-height: 0;
+    padding: 24px;
+  }
+
+  .cg-brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cg-brand {
+    font-size: 21px;
+  }
+
+  .cg-story-body {
+    padding: 32px 0 22px;
+  }
+
+  .cg-story-body h1 {
+    font-size: clamp(30px, 7vw, 42px);
+    letter-spacing: -1.2px;
+  }
+
+  .cg-story-body > p {
+    font-size: 12px;
+  }
+
+  .cg-network,
+  .cg-story-footer {
+    display: none;
+  }
+
+  .cg-login-form-side {
+    padding: 28px 18px;
+  }
+
+  .cg-login-card {
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 400px) {
+  .cg-login-card {
+    padding: 27px 20px;
+  }
+
+  .cg-form-options {
+    align-items: flex-start;
+  }
+}
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-login *,
+  .cg-login *::before,
+  .cg-login *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================
+   COLOGI LOGIN - LOGO & FULL SCREEN UPDATE
+============================================ */
+
+/* LOGO NỔI BẬT HƠN */
+
+.cg-brand {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+
+  width: fit-content;
+  padding: 8px 16px;
+
+  border-radius: 18px;
+  border: 1px solid rgba(213, 184, 90, 0.3);
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.025)
+  );
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.cg-brand:hover {
+  transform: translateY(-3px);
+
+  border-color: rgba(213, 184, 90, 0.65);
+
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.17),
+    0 0 25px rgba(213, 184, 90, 0.12);
+}
+
+.cg-brand img {
+  display: block;
+
+  width: 112px;
+  height: 94px;
+
+  object-fit: contain;
+
+  background: transparent;
+
+  filter:
+    brightness(1.18)
+    drop-shadow(0 3px 9px rgba(213, 184, 90, 0.3));
+}
+
+/* FIXED DESKTOP LOGIN */
+
+@media (min-width: 761px) {
+
+
+  .cg-login {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* CỘT BÊN TRÁI */
+
+  .cg-login-story {
+    height: 100%;
+    min-height: 0;
+
+    padding:
+      clamp(18px, 2.8vh, 32px)
+      clamp(24px, 3.5vw, 48px);
+
+    overflow: hidden;
+  }
+
+  .cg-story-body {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    margin: 0;
+    padding-top: 0;
+  }
+
+  .cg-story-body h1 {
+    font-size: clamp(
+      30px,
+      5.8vh,
+      52px
+    );
+
+    line-height: 1.12;
+    letter-spacing: -1.5px;
+
+    margin: 13px 0 12px;
+  }
+
+  .cg-story-body > p {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  /* THU GỌN MINH HỌA LOGISTICS */
+
+  .cg-network {
+    flex-shrink: 1;
+
+    width: min(100%, 420px);
+    height: clamp(140px, 23vh, 215px);
+
+    margin: 13px auto 4px;
+  }
+
+  .cg-core {
+    width: 94px;
+    height: 94px;
+  }
+
+  .cg-core span {
+    font-size: 20px;
+  }
+
+  .cg-core small {
+    font-size: 8px;
+  }
+
+  .cg-flow-node {
+    padding: 8px 11px;
+    gap: 8px;
+  }
+
+  .cg-flow-node strong {
+    font-size: 11px;
+  }
+
+  .cg-flow-node small {
+    font-size: 9px;
+  }
+
+  .cg-node-number {
+    width: 27px;
+    height: 27px;
+  }
+
+  .cg-story-footer {
+    flex-shrink: 0;
+    font-size: 9px;
+  }
+
+  /* CỘT FORM BÊN PHẢI */
+
+  .cg-login-form-side {
+    height: 100%;
+    min-height: 0;
+
+    padding:
+      clamp(16px, 2.8vh, 30px)
+      clamp(20px, 3.5vw, 58px);
+
+    gap: 12px;
+
+    overflow: hidden;
+  }
+
+  .cg-login-card {
+    padding:
+      clamp(22px, 3vh, 36px)
+      clamp(22px, 3vw, 35px);
+
+    border-radius: 22px;
+  }
+
+  .cg-welcome-symbol {
+    width: 45px;
+    height: 45px;
+
+    margin-bottom: 15px;
+  }
+
+  .cg-login-card h2 {
+    font-size: clamp(27px, 3vw, 35px);
+    margin: 9px 0;
+  }
+
+  .cg-form {
+    margin-top: 17px;
+    gap: 7px;
+  }
+
+  .cg-form label {
+    margin-top: 5px;
+  }
+
+  .cg-field {
+    min-height: 46px;
+  }
+
+  .cg-field input {
+    height: 46px;
+  }
+
+  .cg-login-submit {
+    min-height: 47px;
+  }
+
+  .cg-login-bottom {
+    margin-top: 17px;
+    padding-top: 14px;
+  }
+}
+
+/* MÀN HÌNH LAPTOP THẤP */
+
+@media (min-width: 761px) and (max-height: 650px) {
+
+  .cg-brand img {
+    width: 86px;
+    height: 70px;
+  }
+
+  .cg-story-body h1 {
+    font-size: 31px;
+    margin: 9px 0;
+  }
+
+  .cg-story-body > p {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .cg-network {
+    height: 135px;
+    margin-top: 8px;
+  }
+
+  .cg-story-footer {
+    display: none;
+  }
+
+  .cg-login-card {
+    padding: 18px 24px;
+  }
+
+  .cg-welcome-symbol {
+    margin-bottom: 9px;
+  }
+
+  .cg-form {
+    margin-top: 12px;
+  }
+}
+
+/* MOBILE - LOGO GỌN VÀ FORM DỄ SỬ DỤNG */
+
+@media (max-width: 760px) {
+
+  .cg-login {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+
+    height: 100dvh;
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+  .cg-login-story {
+    min-height: 0;
+    padding: 12px 20px;
+  }
+
+  .cg-brand {
+    padding: 4px 10px;
+  }
+
+  .cg-brand img {
+    width: 68px;
+    height: 55px;
+  }
+
+  .cg-story-body,
+  .cg-story-footer {
+    display: none;
+  }
+
+  .cg-login-form-side {
+    min-height: 0;
+    padding: 16px;
+    gap: 12px;
+
+    overflow-y: auto;
+  }
+
+  .cg-login-card {
+    padding: 25px 22px;
+  }
+}
+
+/* GIẢM CHUYỂN ĐỘNG KHI NGƯỜI DÙNG YÊU CẦU */
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-brand,
+  .cg-brand:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ==========================================
+   COLOGI LOGIN - LAYOUT FIX
+========================================== */
+
+/* Cố định trang trong một màn hình */
+@media (min-width: 761px) {
+  .cg-login {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .cg-login-story {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .cg-story-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 0;
+    margin: 0;
+  }
+
+  /* Tăng không gian cho sơ đồ */
+  .cg-network {
+    position: relative;
+    width: min(100%, 440px);
+    height: 270px;
+    flex: 0 0 270px;
+    margin: 18px auto 0;
+  }
+
+  /* CoLogi ở giữa, không chạm thẻ khác */
+  .cg-core {
+    top: 51%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Hai thẻ phía trên */
+  .cg-node-one {
+    top: 2%;
+    left: 0;
+  }
+
+  .cg-node-two {
+    top: 2%;
+    right: 0;
+  }
+
+  /* Thẻ vận chuyển đặt hẳn phía dưới */
+  .cg-node-three {
+    top: auto;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Laptop có chiều cao màn hình thấp */
+@media (min-width: 761px) and (max-height: 720px) {
+  .cg-network {
+    height: 195px;
+    flex-basis: 195px;
+    margin-top: 8px;
+  }
+
+  .cg-core {
+    top: 48%;
+    width: 76px;
+    height: 76px;
+  }
+
+  .cg-core span {
+    font-size: 16px;
+  }
+
+  .cg-core small {
+    font-size: 7px;
+  }
+
+  .cg-flow-node {
+    padding: 7px 9px;
+  }
+
+  .cg-node-three {
+    bottom: -2px;
+  }
+
+  .cg-story-body h1 {
+    font-size: clamp(28px, 5vh, 38px);
+  }
+}
+
+/* ==========================================
+   FIX CHROME AUTOFILL BACKGROUND
+========================================== */
+
+.cg-field input:-webkit-autofill,
+.cg-field input:-webkit-autofill:hover,
+.cg-field input:-webkit-autofill:focus {
+  -webkit-box-shadow:
+    0 0 0 1000px #F8FBF8 inset !important;
+
+  -webkit-text-fill-color: #183627 !important;
+
+  caret-color: #123C1B;
+
+  border-radius: 0;
+
+  transition:
+    background-color 9999s ease-out 0s;
+}
+
+.cg-field:focus-within {
+  border-color: #4BB169;
+
+  box-shadow:
+    0 0 0 4px rgba(75, 177, 105, 0.12);
+}
+
+
+/* =======================================
+   COLOGI LOGO - LIGHT CHAMPAGNE GLASS
+======================================= */
+
+.cg-login .cg-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  flex-shrink: 0;
+
+  width: 200px;
+  height: 128px;
+  padding: 10px;
+
+  border-radius: 23px;
+  overflow: hidden;
+
+  /* Nền trắng ngà, đủ sáng để nổi logo */
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 250, 0.98),
+    rgba(255, 248, 225, 0.95) 55%,
+    rgba(245, 232, 190, 0.93)
+  );
+
+  border: 1px solid rgba(255, 235, 175, 0.95);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 14px 38px rgba(0, 0, 0, 0.18),
+    0 0 0 3px rgba(213, 184, 90, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Ánh sáng trên mặt kính */
+.cg-login .cg-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0.45),
+    transparent 55%
+  );
+}
+
+/* Logo */
+.cg-login .cg-brand img {
+  position: relative;
+  z-index: 1;
+  display: block;
+
+  width: 160px;
+  height: 105px;
+  max-width: 100%;
+
+  object-fit: contain;
+  transform: scale(1.12);
+
+  /* Không tăng brightness quá mạnh */
+  filter:
+    contrast(1.12)
+    saturate(1.08)
+    drop-shadow(
+      0 3px 3px rgba(18, 60, 27, 0.15)
+    );
+}
+
+/* Hover nhẹ */
+.cg-login .cg-brand:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.20),
+    0 0 22px rgba(213, 184, 90, 0.25);
+}
+
+/* Laptop thấp */
+@media (min-width: 761px) and (max-height: 650px) {
+  .cg-login .cg-brand {
+    width: 155px;
+    height: 92px;
+  }
+
+  .cg-login .cg-brand img {
+    width: 125px;
+    height: 78px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .cg-login .cg-brand {
+    width: 120px;
+    height: 80px;
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  .cg-login .cg-brand img {
+    width: 100px;
+    height: 66px;
+    transform: scale(1.05);
+  }
+}

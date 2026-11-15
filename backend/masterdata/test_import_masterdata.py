@@ -49,6 +49,21 @@ def valid_sheets():
             "contact_email": "carrier@example.test",
             "is_active": "1",
         },
+
+        "07_Cargo_Categories": {
+            "category_code": "CARGO-TEST-IMPORT",
+            "category_name": "Import Test Cargo",
+            "description": "Cargo category for importer tests",
+            "is_active": "1",
+        },
+        "09_Vehicle_Types": {
+            "vehicle_code": "VEH-TEST-IMPORT",
+            "vehicle_name": "Import Test Vehicle",
+            "capacity_kg": "1000.000",
+            "description": "Vehicle type for importer tests",
+            "is_active": "1",
+        },
+
     }
 
     for config in CONFIG:

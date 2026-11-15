@@ -90,6 +90,28 @@ export default function AppLayout() {
               )
             }
 
+            if (role === 'TRANSPORT_PROVIDER') {
+              return (
+                <Fragment key={role}>
+                  <NavLink to="/provider/vehicle-offers" className="sidebar-link">
+                    <span className="sidebar-link-icon">{item.icon}</span>
+                    <span className="sidebar-link-label">
+                      <span>Phương tiện</span>
+                      <small>Đội xe và báo giá</small>
+                    </span>
+                  </NavLink>
+
+                  <NavLink to="/provider/availability" className="sidebar-link">
+                    <span className="sidebar-link-icon">◷</span>
+                    <span className="sidebar-link-label">
+                      <span>Lịch khả dụng</span>
+                      <small>Điều phối năng lực</small>
+                    </span>
+                  </NavLink>
+                </Fragment>
+              )
+            }
+
             return (
               <div
                 key={role}

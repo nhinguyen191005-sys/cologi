@@ -1,9 +1,9 @@
 from datetime import datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
-
+import secrets
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
@@ -24,7 +24,10 @@ from .models import (
 
 
 BUSINESS_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
-
+OPERATIONAL_SOURCE_MODES = (
+    ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+    ProviderAvailability.SourceMode.PROVIDER_CONFIRMED_IMPORT,
+)
 
 def _audit(actor, action, entity_type, entity_id, old_values, new_values, ip_address):
     AuditLog.objects.create(
@@ -119,6 +122,78 @@ def _offer_snapshot(offer):
         ),
     )
 
+def _vehicle_type_snapshot(vehicle_type):
+    return _model_values(
+        vehicle_type,
+        (
+            "vehicle_code",
+            "vehicle_name",
+            "capacity_kg",
+            "description",
+            "is_active",
+        ),
+    )
+
+def _generate_vehicle_type_code():
+    return f"VTP-{secrets.token_hex(4).upper()}"
+
+
+def _create_provider_vehicle_type(
+    *,
+    actor,
+    vehicle_name,
+    capacity_kg,
+    description="",
+    ip_address=None,
+):
+    max_code_attempts = 10
+
+    for _ in range(max_code_attempts):
+        candidate_code = _generate_vehicle_type_code()
+
+        vehicle_type = VehicleType(
+            vehicle_code=candidate_code,
+            vehicle_name=vehicle_name,
+            capacity_kg=capacity_kg,
+            description=description,
+            is_active=True,
+        )
+
+        try:
+            with transaction.atomic():
+                try:
+                    vehicle_type.full_clean(validate_unique=False)
+                except DjangoValidationError as exc:
+                    raise ValidationError(
+                        exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+                    ) from exc
+
+                vehicle_type.save()
+            break
+        except IntegrityError:
+            if not VehicleType.objects.filter(
+                vehicle_code=candidate_code
+            ).exists():
+                raise
+    else:
+        raise ValidationError({
+            "new_vehicle_type": (
+                "Could not generate a unique vehicle type code. "
+                "Please retry the request."
+            )
+        })
+
+    _audit(
+        actor,
+        "PROVIDER_VEHICLE_TYPE_CREATED",
+        "VEHICLE_TYPE",
+        vehicle_type.pk,
+        None,
+        _vehicle_type_snapshot(vehicle_type),
+        ip_address,
+    )
+
+    return vehicle_type
 
 def _availability_snapshot(slot):
     return _model_values(
@@ -219,7 +294,8 @@ def set_supplier_coverage(
 def create_vehicle_offer(
     *,
     provider_id,
-    vehicle_type_id,
+    vehicle_type_id=None,
+    new_vehicle_type=None,
     actor,
     available_vehicle_count,
     fuel_type,
@@ -232,7 +308,26 @@ def create_vehicle_offer(
     ip_address=None,
 ):
     provider = _get_provider(provider_id, lock=True)
-    vehicle_type = _get_active_vehicle_type(vehicle_type_id)
+
+    # Exactly one vehicle type creation method must be provided.
+    if (vehicle_type_id is None) == (new_vehicle_type is None):
+        raise ValidationError({
+            "vehicle_type": (
+                "Provide either vehicle_type_id or new_vehicle_type, "
+                "but not both."
+            )
+        })
+
+    if new_vehicle_type is not None:
+        vehicle_type = _create_provider_vehicle_type(
+            actor=actor,
+            vehicle_name=new_vehicle_type["vehicle_name"],
+            capacity_kg=new_vehicle_type["capacity_kg"],
+            description=new_vehicle_type.get("description", ""),
+            ip_address=ip_address,
+        )
+    else:
+        vehicle_type = _get_active_vehicle_type(vehicle_type_id)
 
     offer = ProviderVehicleOffer(
         provider=provider,
@@ -246,8 +341,10 @@ def create_vehicle_offer(
         is_active=is_active,
         vehicle_note=vehicle_note,
     )
+
     _validate_model(offer)
     offer.save()
+
     _audit(
         actor,
         "PROVIDER_VEHICLE_OFFER_CREATED",
@@ -257,6 +354,7 @@ def create_vehicle_offer(
         _offer_snapshot(offer),
         ip_address,
     )
+
     return offer
 
 
@@ -267,7 +365,7 @@ def _effective_operational_slots(offer):
 
     return ProviderAvailability.objects.filter(
         provider_vehicle_offer=offer,
-        source_mode=ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+        source_mode__in=OPERATIONAL_SOURCE_MODES,
     ).filter(
         Q(service_date__gt=local_date)
         | Q(service_date=local_date, end_time__gt=local_time)
@@ -461,7 +559,7 @@ def _validate_portal_availability(
     overlaps = ProviderAvailability.objects.filter(
         provider_vehicle_offer=offer,
         service_date=service_date,
-        source_mode=ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+        source_mode__in=OPERATIONAL_SOURCE_MODES,
         start_time__lt=end_time,
         end_time__gt=start_time,
     )
@@ -469,7 +567,7 @@ def _validate_portal_availability(
         overlaps = overlaps.exclude(pk=exclude_id)
     if overlaps.exists():
         raise ValidationError({
-            "start_time": "This Availability window overlaps another Provider Portal window."
+            "start_time": "This Availability window overlaps another operational Availability window."
         })
 
 
@@ -548,7 +646,7 @@ def update_availability(
     except ProviderAvailability.DoesNotExist as exc:
         raise NotFound("Availability not found.") from exc
 
-    if scope["source_mode"] != ProviderAvailability.SourceMode.PROVIDER_PORTAL:
+    if scope["source_mode"] not in OPERATIONAL_SOURCE_MODES:
         raise NotFound("Availability not found.")
 
     try:
@@ -567,7 +665,7 @@ def update_availability(
         slot = ProviderAvailability.objects.select_for_update().get(
             pk=availability_id,
             provider_vehicle_offer=offer,
-            source_mode=ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+            source_mode__in=OPERATIONAL_SOURCE_MODES,
         )
     except ProviderAvailability.DoesNotExist as exc:
         raise NotFound("Availability not found.") from exc

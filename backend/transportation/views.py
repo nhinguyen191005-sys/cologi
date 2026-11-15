@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from masterdata.models import TransportProvider
+from masterdata.models import TransportProvider, VehicleType
 
 from .models import (
     ProviderAvailability,
@@ -23,6 +23,7 @@ from .serializers import (
     ProviderVehicleOfferCreateSerializer,
     ProviderVehicleOfferReadSerializer,
     ProviderVehicleOfferUpdateSerializer,
+    ProviderVehicleTypeCatalogSerializer,
 )
 from .services import (
     create_availability,
@@ -189,6 +190,16 @@ class ProviderSupplierCoverageDetailView(
             status=status.HTTP_200_OK,
         )
 
+class ProviderVehicleTypeListView(
+    ProviderScopeMixin,
+    generics.ListAPIView,
+):
+    serializer_class = ProviderVehicleTypeCatalogSerializer
+
+    def get_queryset(self):
+        return VehicleType.objects.filter(
+            is_active=True,
+        ).order_by("vehicle_code")
 
 class ProviderVehicleOfferListCreateView(
     ProviderScopeMixin,
@@ -291,7 +302,10 @@ class ProviderAvailabilityListCreateView(
             ProviderAvailability.objects
             .filter(
                 provider_vehicle_offer__provider_id=self.get_provider_id(),
-                source_mode=ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+                source_mode__in=[
+                    ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+                    ProviderAvailability.SourceMode.PROVIDER_CONFIRMED_IMPORT,
+                ],
             )
             .select_related(
                 "provider_vehicle_offer",
@@ -340,7 +354,10 @@ class ProviderAvailabilityDetailView(
             ProviderAvailability.objects
             .filter(
                 provider_vehicle_offer__provider_id=self.get_provider_id(),
-                source_mode=ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+                source_mode__in=[
+                    ProviderAvailability.SourceMode.PROVIDER_PORTAL,
+                    ProviderAvailability.SourceMode.PROVIDER_CONFIRMED_IMPORT,
+                ],
             )
             .select_related(
                 "provider_vehicle_offer",

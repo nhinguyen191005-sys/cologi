@@ -8,10 +8,16 @@ from .views import (
     ProviderSupplierCoverageListCreateView,
     ProviderVehicleOfferDetailView,
     ProviderVehicleOfferListCreateView,
+    ProviderVehicleTypeListView,
 )
 
 
 urlpatterns = [
+    path(
+        "vehicle-types/",
+        ProviderVehicleTypeListView.as_view(),
+        name="provider-vehicle-types",
+    ),  
     path("me/", ProviderProfileView.as_view(), name="provider-profile"),
     path(
         "me/supplier-coverages/",

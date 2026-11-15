@@ -9,6 +9,8 @@ import LoginPage from './pages/LoginPage'
 import SupplierInboxPage from './pages/SupplierInboxPage'
 import SupplierRequestDetailPage from './pages/SupplierRequestDetailPage'
 import SupplierCatalogPage from './pages/SupplierCatalogPage'
+import VehicleOffersPage from './pages/VehicleOffersPage'
+import ProviderAvailabilityPage from './pages/ProviderAvailabilityPage'
 
 function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -36,6 +38,14 @@ function SupplierRoute() {
     : <Navigate to="/" replace />
 }
 
+function ProviderRoute() {
+  const { user } = useAuth()
+
+  return user?.roles.includes('TRANSPORT_PROVIDER')
+    ? <Outlet />
+    : <Navigate to="/" replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -57,6 +67,17 @@ export default function App() {
             <Route path="/supplier/requests/:id" element={<SupplierRequestDetailPage />} />
             <Route path="/supplier/items" element={<SupplierCatalogPage />} />
           </Route>
+
+                    <Route element={<ProviderRoute />}>
+                      <Route
+                        path="/provider/vehicle-offers"
+                        element={<VehicleOffersPage />}
+                      />
+                      <Route
+                        path="/provider/availability"
+                        element={<ProviderAvailabilityPage />}
+                      />
+                    </Route>
         </Route>
       </Route>
 

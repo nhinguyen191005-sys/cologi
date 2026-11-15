@@ -153,6 +153,10 @@ class ProviderAvailability(models.Model):
 
     class SourceMode(models.TextChoices):
         PROVIDER_PORTAL = "PROVIDER_PORTAL", "Provider Portal"
+        PROVIDER_CONFIRMED_IMPORT = (
+            "PROVIDER_CONFIRMED_IMPORT",
+            "Provider Confirmed Import",
+        )
         SYNTHETIC_NOVEMBER_DEMO = (
             "SYNTHETIC_NOVEMBER_DEMO",
             "Synthetic November Demo",

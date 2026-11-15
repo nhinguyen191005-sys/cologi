@@ -46,6 +46,8 @@ export default function DemandsPage() {
   const [demands, setDemands] = useState<DeliveryDemand[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | DemandStatus>('ALL')
+  const [supplierFilter, setSupplierFilter] = useState('ALL')
+  const [outletFilter, setOutletFilter] = useState('ALL')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -63,39 +65,51 @@ export default function DemandsPage() {
   }, [])
 
   useEffect(() => {
-    let active = true
-
-    listDemands()
-      .then((data) => {
-        if (active) setDemands(data)
-      })
-      .catch((loadError) => {
-        if (active) setError(getErrorMessage(loadError))
-      })
-      .finally(() => {
-        if (active) setIsLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
+    void loadDemands()
+  }, [loadDemands])
 
   const filteredDemands = useMemo(() => {
     const keyword = search.trim().toLocaleLowerCase('vi')
+
     return demands.filter((demand) => {
       const matchesStatus =
         statusFilter === 'ALL' || demand.status === statusFilter
+
+      const matchesSupplier =
+        supplierFilter === 'ALL' ||
+        String(demand.supplier_id) === supplierFilter
+
+      const matchesOutlet =
+        outletFilter === 'ALL' ||
+        String(demand.outlet_id) === outletFilter
+
       const searchable = [
         demand.demand_code,
         demand.supplier_name,
         demand.supplier_code,
         demand.outlet_name,
         demand.outlet_code,
-      ].join(' ').toLocaleLowerCase('vi')
-      return matchesStatus && (!keyword || searchable.includes(keyword))
+      ]
+        .join(' ')
+        .toLocaleLowerCase('vi')
+
+      const matchesSearch =
+        !keyword || searchable.includes(keyword)
+
+      return (
+        matchesStatus &&
+        matchesSupplier &&
+        matchesOutlet &&
+        matchesSearch
+      )
     })
-  }, [demands, search, statusFilter])
+  }, [
+    demands,
+    search,
+    statusFilter,
+    supplierFilter,
+    outletFilter,
+  ])
 
   const draftCount = demands.filter((demand) => demand.status === 'DRAFT').length
 
@@ -168,6 +182,50 @@ export default function DemandsPage() {
             {Object.entries(statusLabels).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
+          </select>
+          <select
+            value={supplierFilter}
+            onChange={(event) => setSupplierFilter(event.target.value)}
+            aria-label="Lọc theo nhà cung cấp"
+          >
+            <option value="ALL">Tất cả nhà cung cấp</option>
+
+            {Array.from(
+              new Map(
+                demands.map((demand) => [
+                  demand.supplier_id,
+                  demand.supplier_name,
+                ])
+              ).entries()
+            )
+              .sort((a, b) => a[1].localeCompare(b[1], 'vi'))
+              .map(([id, name]) => (
+                <option key={id} value={String(id)}>
+                  {name}
+                </option>
+              ))}
+          </select>
+          <select
+            value={outletFilter}
+            onChange={(event) => setOutletFilter(event.target.value)}
+            aria-label="Lọc theo cửa hàng"
+          >
+            <option value="ALL">Tất cả cửa hàng</option>
+
+            {Array.from(
+              new Map(
+                demands.map((demand) => [
+                  demand.outlet_id,
+                  demand.outlet_name,
+                ])
+              ).entries()
+            )
+              .sort((a, b) => a[1].localeCompare(b[1], 'vi'))
+              .map(([id, name]) => (
+                <option key={id} value={String(id)}>
+                  {name}
+                </option>
+              ))}
           </select>
         </div>
 

@@ -120,12 +120,44 @@ class ProviderVehicleOfferReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+class NewProviderVehicleTypeSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    vehicle_name = serializers.CharField(
+        max_length=150,
+        trim_whitespace=True,
+    )
+    capacity_kg = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        min_value=Decimal("0.001"),
+    )
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        default="",
+    )
+
+    def validate_vehicle_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Vehicle name cannot be blank."
+            )
+        return value.strip()
 
 class ProviderVehicleOfferCreateSerializer(
     StrictInputMixin,
     serializers.Serializer,
 ):
-    vehicle_type_id = serializers.IntegerField(min_value=1)
+    vehicle_type_id = serializers.IntegerField(
+        min_value=1,
+        required=False,
+    )
+    new_vehicle_type = NewProviderVehicleTypeSerializer(
+        required=False,
+    )
     available_vehicle_count = serializers.IntegerField(min_value=0)
     fuel_type = serializers.ChoiceField(
         choices=ProviderVehicleOffer.FuelType.choices,
@@ -165,6 +197,17 @@ class ProviderVehicleOfferCreateSerializer(
     )
 
     def validate(self, attrs):
+        has_existing_type = "vehicle_type_id" in attrs
+        has_new_type = "new_vehicle_type" in attrs
+
+        if has_existing_type == has_new_type:
+            raise serializers.ValidationError({
+                "vehicle_type": (
+                    "Provide exactly one of vehicle_type_id "
+                    "or new_vehicle_type."
+                )
+            })
+
         start = attrs.get("operating_start_time")
         end = attrs.get("operating_end_time")
 

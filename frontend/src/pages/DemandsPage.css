@@ -131,8 +131,12 @@
 }
 
 .demand-filters {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1fr)
+    repeat(3, minmax(150px, 190px));
   gap: 12px;
+  align-items: center;
 }
 
 .demand-search {
@@ -168,7 +172,8 @@
 }
 
 .demand-filters select {
-  min-width: 180px;
+  width: 100%;
+  min-width: 0;
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--color-border);
@@ -346,9 +351,8 @@
   }
 
   .demand-filters {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
-
   .demand-filters select {
     width: 100%;
   }
