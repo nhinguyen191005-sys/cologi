@@ -51,4 +51,5 @@ urlpatterns = [
     path("api/masterdata/", include("masterdata.urls")),
     path("api/demands/", include("demands.urls")),
     path("", include("suppliers.urls")),
+    path("api/providers/", include("transportation.urls")),
 ]

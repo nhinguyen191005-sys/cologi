@@ -3,13 +3,21 @@ import zipfile
 import re
 import xml.etree.ElementTree as ET
 
+from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, IntegrityError
 
-from masterdata.models import Supplier, Outlet, TransportProvider
+from masterdata.models import (
+    Supplier,
+    Outlet,
+    TransportProvider,
+    CargoCategory,
+    VehicleType,
+    VehicleCargoCompatibility,
+)
 
 
 NS = {
@@ -17,6 +25,7 @@ NS = {
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
     "p": "http://schemas.openxmlformats.org/package/2006/relationships",
 }
+
 
 CONFIG = [
     {
@@ -44,6 +53,24 @@ CONFIG = [
         "fields": [
             "provider_code", "provider_name", "provider_type",
             "service_region", "contact_email", "is_active",
+        ],
+    },
+    {
+        "sheet": "07_Cargo_Categories",
+        "model": CargoCategory,
+        "key": "category_code",
+        "fields": [
+            "category_code", "category_name",
+            "description", "is_active",
+        ],
+    },
+    {
+        "sheet": "09_Vehicle_Types",
+        "model": VehicleType,
+        "key": "vehicle_code",
+        "fields": [
+            "vehicle_code", "vehicle_name",
+            "capacity_kg", "description", "is_active",
         ],
     },
 ]
@@ -127,7 +154,7 @@ def normalize(field, value):
     if value is None or str(value).strip() == "":
         return None
 
-    if field == "is_active":
+    if field in ("is_active", "is_supported"):
         value = str(value).strip().lower()
 
         if value in ("true", "1", "yes", "y"):
@@ -136,12 +163,56 @@ def normalize(field, value):
         if value in ("false", "0", "no", "n"):
             return False
 
-        raise ValueError(f"is_active không hợp lệ: {value}")
+        raise ValueError(f"{field} không hợp lệ: {value}")
 
     return str(value).strip()
 
 
-def build_plan(sheets):
+def extract_records(sheets, sheet_name, fields):
+    if sheet_name not in sheets:
+        raise ValueError(f"Không tìm thấy sheet {sheet_name}")
+
+    rows = sheets[sheet_name]
+    header_index = None
+    headers = {}
+
+    for index, row in enumerate(rows):
+        candidate = {
+            value.strip(): col
+            for col, value in row.items()
+            if value and value.strip()
+        }
+
+        if all(field in candidate for field in fields):
+            header_index = index
+            headers = candidate
+            break
+
+    if header_index is None:
+        raise ValueError(
+            f"{sheet_name}: không tìm thấy header hợp lệ"
+        )
+
+    records = []
+
+    for row_number, row in enumerate(
+        rows[header_index + 1:],
+        start=header_index + 2,
+    ):
+        record = {
+            field: normalize(field, row.get(headers[field]))
+            for field in fields
+        }
+
+        if all(value is None for value in record.values()):
+            continue
+
+        records.append((row_number, record))
+
+    return records
+
+
+def build_masterdata_plan(sheets):
     plan = []
     errors = []
     conflicts = []
@@ -155,30 +226,10 @@ def build_plan(sheets):
 
         print(f"\n=== {sheet_name} ===")
 
-        if sheet_name not in sheets:
-            errors.append(f"Không tìm thấy sheet {sheet_name}")
-            continue
-
-        rows = sheets[sheet_name]
-        header_index = None
-        headers = {}
-
-        for index, row in enumerate(rows):
-            candidate = {
-                value.strip(): col
-                for col, value in row.items()
-                if value and value.strip()
-            }
-
-            if all(field in candidate for field in fields):
-                header_index = index
-                headers = candidate
-                break
-
-        if header_index is None:
-            errors.append(
-                f"{sheet_name}: không tìm thấy header hợp lệ"
-            )
+        try:
+            rows = extract_records(sheets, sheet_name, fields)
+        except Exception as exc:
+            errors.append(str(exc))
             continue
 
         seen = set()
@@ -189,28 +240,17 @@ def build_plan(sheets):
             "ERROR": 0,
         }
 
-        for row_number, row in enumerate(
-            rows[header_index + 1:],
-            start=header_index + 2,
-        ):
-            record = {}
-
+        for row_number, record in rows:
             try:
-                for field in fields:
-                    record[field] = normalize(
-                        field, row.get(headers[field])
-                    )
-
-                if all(value is None for value in record.values()):
-                    continue
-
                 key = record[key_field]
 
                 if not key:
                     raise ValueError("Thiếu khóa tự nhiên")
 
                 if key in seen:
-                    raise ValueError(f"Trùng mã trong Excel: {key}")
+                    raise ValueError(
+                        f"Trùng mã trong Excel: {key}"
+                    )
 
                 seen.add(key)
 
@@ -234,12 +274,10 @@ def build_plan(sheets):
                 if existing is None:
                     status = "INSERT"
                 else:
-                    changed = []
-
-                    for field in fields:
-                        current = getattr(existing, field)
-                        if current != record[field]:
-                            changed.append(field)
+                    changed = [
+                        field for field in fields
+                        if getattr(existing, field) != record[field]
+                    ]
 
                     if changed:
                         status = "CONFLICT"
@@ -252,7 +290,6 @@ def build_plan(sheets):
 
                 counts[status] += 1
                 plan.append((model, record, status, key))
-
                 print(f"{status}: {key}")
 
             except Exception as exc:
@@ -268,9 +305,238 @@ def build_plan(sheets):
     return plan, errors, conflicts, summaries
 
 
+def workbook_id(value):
+    if value is None or str(value).strip() == "":
+        raise ValueError("Thiếu Excel ID")
+
+    try:
+        number = Decimal(str(value).strip())
+    except InvalidOperation as exc:
+        raise ValueError(f"Excel ID không hợp lệ: {value}") from exc
+
+    if number != number.to_integral_value():
+        raise ValueError(f"Excel ID phải là số nguyên: {value}")
+
+    return int(number)
+
+
+def build_vehicle_compatibility_plan(sheets, master_plan):
+    sheet_name = "10_Vehicle_Cargo"
+    fields = [
+        "vehicle_type_id",
+        "cargo_category_id",
+        "is_supported",
+        "source",
+    ]
+
+    plan = []
+    errors = []
+    conflicts = []
+    counts = {
+        "INSERT": 0,
+        "UNCHANGED": 0,
+        "CONFLICT": 0,
+        "ERROR": 0,
+    }
+
+    print(f"\n=== {sheet_name} ===")
+
+    try:
+        vehicle_rows = extract_records(
+            sheets,
+            "09_Vehicle_Types",
+            ["id", "vehicle_code"],
+        )
+        cargo_rows = extract_records(
+            sheets,
+            "07_Cargo_Categories",
+            ["id", "category_code"],
+        )
+        compatibility_rows = extract_records(
+            sheets,
+            sheet_name,
+            fields,
+        )
+
+        vehicle_map = {}
+        cargo_map = {}
+
+        for row_number, record in vehicle_rows:
+            excel_id = workbook_id(record["id"])
+            code = record["vehicle_code"]
+
+            if not code or excel_id in vehicle_map:
+                raise ValueError(
+                    f"09_Vehicle_Types row {row_number}: "
+                    "ID hoặc vehicle_code bị thiếu/trùng"
+                )
+
+            vehicle_map[excel_id] = code
+
+        for row_number, record in cargo_rows:
+            excel_id = workbook_id(record["id"])
+            code = record["category_code"]
+
+            if not code or excel_id in cargo_map:
+                raise ValueError(
+                    f"07_Cargo_Categories row {row_number}: "
+                    "ID hoặc category_code bị thiếu/trùng"
+                )
+
+            cargo_map[excel_id] = code
+
+        planned_vehicles = {
+            record["vehicle_code"]
+            for model, record, status, key in master_plan
+            if model is VehicleType and status == "INSERT"
+        }
+
+        planned_categories = {
+            record["category_code"]
+            for model, record, status, key in master_plan
+            if model is CargoCategory and status == "INSERT"
+        }
+
+        seen = set()
+
+        for row_number, record in compatibility_rows:
+            try:
+                vehicle_excel_id = workbook_id(
+                    record["vehicle_type_id"]
+                )
+                cargo_excel_id = workbook_id(
+                    record["cargo_category_id"]
+                )
+
+                if vehicle_excel_id not in vehicle_map:
+                    raise ValueError(
+                        f"Không tìm thấy VehicleType Excel ID "
+                        f"{vehicle_excel_id}"
+                    )
+
+                if cargo_excel_id not in cargo_map:
+                    raise ValueError(
+                        f"Không tìm thấy CargoCategory Excel ID "
+                        f"{cargo_excel_id}"
+                    )
+
+                vehicle_code = vehicle_map[vehicle_excel_id]
+                category_code = cargo_map[cargo_excel_id]
+
+                key = f"{vehicle_code}|{category_code}"
+
+                if key in seen:
+                    raise ValueError(
+                        f"Trùng cặp Vehicle-Cargo: {key}"
+                    )
+
+                seen.add(key)
+
+                if record["is_supported"] is None:
+                    raise ValueError("Thiếu is_supported")
+
+                if not record["source"]:
+                    raise ValueError("Thiếu source")
+
+                vehicle = VehicleType.objects.filter(
+                    vehicle_code=vehicle_code
+                ).first()
+
+                category = CargoCategory.objects.filter(
+                    category_code=category_code
+                ).first()
+
+                if vehicle is None and vehicle_code not in planned_vehicles:
+                    raise ValueError(
+                        f"VehicleType chưa tồn tại hoặc chưa được lập kế hoạch: "
+                        f"{vehicle_code}"
+                    )
+
+                if category is None and category_code not in planned_categories:
+                    raise ValueError(
+                        f"CargoCategory chưa tồn tại hoặc chưa được lập kế hoạch: "
+                        f"{category_code}"
+                    )
+
+                existing = None
+
+                if vehicle is not None and category is not None:
+                    existing = VehicleCargoCompatibility.objects.filter(
+                        vehicle_type=vehicle,
+                        cargo_category=category,
+                    ).first()
+
+                compatibility_record = {
+                    "vehicle_type_code": vehicle_code,
+                    "cargo_category_code": category_code,
+                    "is_supported": record["is_supported"],
+                    "source": record["source"],
+                }
+
+                if existing is None:
+                    status = "INSERT"
+                else:
+                    changed = []
+
+                    if existing.is_supported != record["is_supported"]:
+                        changed.append("is_supported")
+
+                    if existing.source != record["source"]:
+                        changed.append("source")
+
+                    if changed:
+                        status = "CONFLICT"
+                        conflicts.append(
+                            f"{sheet_name} row {row_number}: "
+                            f"{key}, fields: {', '.join(changed)}"
+                        )
+                    else:
+                        status = "UNCHANGED"
+
+                counts[status] += 1
+                plan.append((
+                    VehicleCargoCompatibility,
+                    compatibility_record,
+                    status,
+                    key,
+                ))
+                print(f"{status}: {key}")
+
+            except Exception as exc:
+                counts["ERROR"] += 1
+                errors.append(
+                    f"{sheet_name} row {row_number}: {exc}"
+                )
+                print(f"ERROR row {row_number}: {exc}")
+
+    except Exception as exc:
+        errors.append(f"{sheet_name}: {exc}")
+
+    print("Summary:", counts)
+
+    return plan, errors, conflicts, counts
+
+
+def build_plan(sheets):
+    master_plan, errors, conflicts, summaries = (
+        build_masterdata_plan(sheets)
+    )
+
+    compatibility_plan, compatibility_errors, compatibility_conflicts, compatibility_summary = (
+        build_vehicle_compatibility_plan(sheets, master_plan)
+    )
+
+    plan = master_plan + compatibility_plan
+    errors.extend(compatibility_errors)
+    conflicts.extend(compatibility_conflicts)
+    summaries["10_Vehicle_Cargo"] = compatibility_summary
+
+    return plan, errors, conflicts, summaries
+
+
 class Command(BaseCommand):
     help = (
-        "Import Suppliers, Outlets and Transport Providers "
+        "Import master data and vehicle-cargo configuration "
         "from Dataset V7. Default mode is read-only."
     )
 
@@ -353,11 +619,12 @@ class Command(BaseCommand):
         )
 
         if confirmation != "IMPORT":
-            raise CommandError("Đã hủy import. Database không thay đổi.")
+            raise CommandError(
+                "Đã hủy import. Database không thay đổi."
+            )
 
         try:
             with transaction.atomic():
-                # Re-check the plan inside the transaction.
                 fresh_sheets = read_workbook(workbook)
                 fresh_plan, fresh_errors, fresh_conflicts, _ = (
                     build_plan(fresh_sheets)
@@ -375,7 +642,23 @@ class Command(BaseCommand):
                     if status != "INSERT":
                         continue
 
-                    instance = model(**record)
+                    if model is VehicleCargoCompatibility:
+                        vehicle = VehicleType.objects.get(
+                            vehicle_code=record["vehicle_type_code"]
+                        )
+                        category = CargoCategory.objects.get(
+                            category_code=record["cargo_category_code"]
+                        )
+
+                        instance = VehicleCargoCompatibility(
+                            vehicle_type=vehicle,
+                            cargo_category=category,
+                            is_supported=record["is_supported"],
+                            source=record["source"],
+                        )
+                    else:
+                        instance = model(**record)
+
                     instance.save(force_insert=True)
                     created_count += 1
 

@@ -1,0 +1,492 @@
+from collections.abc import Mapping
+from decimal import Decimal
+
+from rest_framework import serializers
+
+from masterdata.models import (
+    CargoCategory,
+    Supplier,
+    TransportProvider,
+    VehicleCargoCompatibility,
+    VehicleType,
+)
+
+from .models import (
+    ProviderAvailability,
+    ProviderSupplierCoverage,
+    ProviderVehicleOffer,
+)
+
+
+class StrictInputMixin:
+    """Reject unknown fields instead of silently ignoring client input."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            unknown_fields = set(data.keys()) - set(self.fields.keys())
+            if unknown_fields:
+                raise serializers.ValidationError({
+                    "non_field_errors": [
+                        "Unsupported fields: "
+                        + ", ".join(
+                            sorted(str(field) for field in unknown_fields)
+                        )
+                    ]
+                })
+        return super().to_internal_value(data)
+
+
+class ProviderSupplierCoverageReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderSupplierCoverage
+        fields = (
+            "id",
+            "provider_id",
+            "supplier_id",
+            "coverage_status",
+            "can_pickup",
+            "service_note",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+
+class ProviderSupplierCoverageCreateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    supplier_id = serializers.IntegerField(min_value=1)
+    coverage_status = serializers.ChoiceField(
+        choices=ProviderSupplierCoverage.CoverageStatus.choices,
+        default=ProviderSupplierCoverage.CoverageStatus.ACTIVE,
+    )
+    can_pickup = serializers.BooleanField(default=True)
+    service_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        default="",
+    )
+
+    def validate_coverage_status(self, value):
+        if value != ProviderSupplierCoverage.CoverageStatus.ACTIVE:
+            raise serializers.ValidationError(
+                "A new Supplier Coverage must start as ACTIVE."
+            )
+        return value
+
+
+class ProviderSupplierCoverageUpdateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    coverage_status = serializers.ChoiceField(
+        choices=ProviderSupplierCoverage.CoverageStatus.choices,
+        required=False,
+    )
+    can_pickup = serializers.BooleanField(required=False)
+    service_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+    )
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                "Provide at least one field to update."
+            )
+        return attrs
+
+
+class ProviderVehicleOfferReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderVehicleOffer
+        fields = (
+            "id",
+            "provider_id",
+            "vehicle_type_id",
+            "available_vehicle_count",
+            "fuel_type",
+            "operating_start_time",
+            "operating_end_time",
+            "fixed_quote_vnd",
+            "estimated_cost_per_km_vnd",
+            "is_active",
+            "vehicle_note",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+
+class ProviderVehicleOfferCreateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    vehicle_type_id = serializers.IntegerField(min_value=1)
+    available_vehicle_count = serializers.IntegerField(min_value=0)
+    fuel_type = serializers.ChoiceField(
+        choices=ProviderVehicleOffer.FuelType.choices,
+    )
+    operating_start_time = serializers.TimeField(
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    operating_end_time = serializers.TimeField(
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    fixed_quote_vnd = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    estimated_cost_per_km_vnd = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    is_active = serializers.BooleanField(default=True)
+    vehicle_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        default="",
+    )
+
+    def validate(self, attrs):
+        start = attrs.get("operating_start_time")
+        end = attrs.get("operating_end_time")
+
+        if (start is None) != (end is None):
+            raise serializers.ValidationError({
+                "operating_start_time": (
+                    "Operating start and end times must be provided together."
+                )
+            })
+
+        if start is not None and start >= end:
+            raise serializers.ValidationError({
+                "operating_end_time": (
+                    "Operating end time must be later than start time."
+                )
+            })
+
+        if attrs["is_active"] and attrs["available_vehicle_count"] <= 0:
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "An active offer must have positive capacity."
+                )
+            })
+
+        return attrs
+
+
+class ProviderVehicleOfferUpdateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    available_vehicle_count = serializers.IntegerField(
+        min_value=0,
+        required=False,
+    )
+    fuel_type = serializers.ChoiceField(
+        choices=ProviderVehicleOffer.FuelType.choices,
+        required=False,
+    )
+    operating_start_time = serializers.TimeField(
+        required=False,
+        allow_null=True,
+    )
+    operating_end_time = serializers.TimeField(
+        required=False,
+        allow_null=True,
+    )
+    fixed_quote_vnd = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        allow_null=True,
+    )
+    estimated_cost_per_km_vnd = serializers.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        allow_null=True,
+    )
+    is_active = serializers.BooleanField(required=False)
+    vehicle_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+    )
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                "Provide at least one field to update."
+            )
+
+        instance = self.instance
+
+        start = attrs.get(
+            "operating_start_time",
+            instance.operating_start_time,
+        )
+        end = attrs.get(
+            "operating_end_time",
+            instance.operating_end_time,
+        )
+
+        if (start is None) != (end is None):
+            raise serializers.ValidationError({
+                "operating_start_time": (
+                    "Operating start and end times must be provided together."
+                )
+            })
+
+        if start is not None and start >= end:
+            raise serializers.ValidationError({
+                "operating_end_time": (
+                    "Operating end time must be later than start time."
+                )
+            })
+
+        is_active = attrs.get("is_active", instance.is_active)
+        capacity = attrs.get(
+            "available_vehicle_count",
+            instance.available_vehicle_count,
+        )
+
+        if is_active and capacity <= 0:
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "An active offer must have positive capacity."
+                )
+            })
+
+        return attrs
+
+
+class ProviderAvailabilityReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderAvailability
+        fields = (
+            "id",
+            "provider_vehicle_offer_id",
+            "service_date",
+            "available_vehicle_count",
+            "start_time",
+            "end_time",
+            "availability_status",
+            "source_mode",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+
+class ProviderAvailabilityCreateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    provider_vehicle_offer_id = serializers.IntegerField(min_value=1)
+    service_date = serializers.DateField()
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    available_vehicle_count = serializers.IntegerField(min_value=0)
+    availability_status = serializers.ChoiceField(
+        choices=ProviderAvailability.AvailabilityStatus.choices,
+    )
+
+    def validate(self, attrs):
+        if attrs["start_time"] >= attrs["end_time"]:
+            raise serializers.ValidationError({
+                "end_time": "End time must be later than start time."
+            })
+
+        count = attrs["available_vehicle_count"]
+        status = attrs["availability_status"]
+
+        if (
+            status == ProviderAvailability.AvailabilityStatus.AVAILABLE
+            and count <= 0
+        ):
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "AVAILABLE requires a positive vehicle count."
+                )
+            })
+
+        if (
+            status == ProviderAvailability.AvailabilityStatus.UNAVAILABLE
+            and count != 0
+        ):
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "UNAVAILABLE requires a vehicle count of zero."
+                )
+            })
+
+        return attrs
+
+
+class ProviderAvailabilityUpdateSerializer(
+    StrictInputMixin,
+    serializers.Serializer,
+):
+    service_date = serializers.DateField(required=False)
+    start_time = serializers.TimeField(required=False)
+    end_time = serializers.TimeField(required=False)
+    available_vehicle_count = serializers.IntegerField(
+        min_value=0,
+        required=False,
+    )
+    availability_status = serializers.ChoiceField(
+        choices=ProviderAvailability.AvailabilityStatus.choices,
+        required=False,
+    )
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                "Provide at least one field to update."
+            )
+
+        instance = self.instance
+        start = attrs.get("start_time", instance.start_time)
+        end = attrs.get("end_time", instance.end_time)
+
+        if start >= end:
+            raise serializers.ValidationError({
+                "end_time": "End time must be later than start time."
+            })
+
+        count = attrs.get(
+            "available_vehicle_count",
+            instance.available_vehicle_count,
+        )
+        status = attrs.get(
+            "availability_status",
+            instance.availability_status,
+        )
+
+        if (
+            status == ProviderAvailability.AvailabilityStatus.AVAILABLE
+            and count <= 0
+        ):
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "AVAILABLE requires a positive vehicle count."
+                )
+            })
+
+        if (
+            status == ProviderAvailability.AvailabilityStatus.UNAVAILABLE
+            and count != 0
+        ):
+            raise serializers.ValidationError({
+                "available_vehicle_count": (
+                    "UNAVAILABLE requires a vehicle count of zero."
+                )
+            })
+
+        return attrs
+
+
+class ProviderProfileReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransportProvider
+        fields = (
+            "id",
+            "provider_code",
+            "provider_name",
+            "provider_type",
+            "service_region",
+            "contact_email",
+            "is_active",
+        )
+        read_only_fields = fields
+
+
+class ProviderProfileUpdateSerializer(
+    StrictInputMixin,
+    serializers.ModelSerializer,
+):
+    class Meta:
+        model = TransportProvider
+        fields = ("service_region",)
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                "Provide at least one field to update."
+            )
+        return attrs
+
+    def validate_service_region(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Service region cannot be blank."
+            )
+        return value.strip()
+
+class ProviderSupplierCatalogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = (
+            "id",
+            "supplier_code",
+            "supplier_name",
+        )
+        read_only_fields = fields
+
+
+class ProviderVehicleTypeCatalogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleType
+        fields = (
+            "id",
+            "vehicle_code",
+            "vehicle_name",
+            "capacity_kg",
+        )
+        read_only_fields = fields
+
+
+class ProviderCargoCategoryCatalogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CargoCategory
+        fields = (
+            "id",
+            "category_code",
+            "category_name",
+            "description",
+        )
+        read_only_fields = fields
+
+
+class ProviderVehicleCargoCompatibilitySerializer(
+    serializers.ModelSerializer,
+):
+    class Meta:
+        model = VehicleCargoCompatibility
+        fields = (
+            "vehicle_type_id",
+            "cargo_category_id",
+            "is_supported",
+            "source",
+        )
+        read_only_fields = fields

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "demands.apps.DemandsConfig",
     "suppliers.apps.SuppliersConfig",
+    "transportation.apps.TransportationConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
