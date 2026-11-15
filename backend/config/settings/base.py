@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "rest_framework.authtoken",
     "demands.apps.DemandsConfig",
+    "suppliers.apps.SuppliersConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

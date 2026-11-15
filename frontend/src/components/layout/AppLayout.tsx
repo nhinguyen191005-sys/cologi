@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/useAuth'
 import type { BusinessRole } from '../../types/auth'
@@ -65,6 +66,27 @@ export default function AppLayout() {
                     <small>Quản lý nhu cầu</small>
                   </span>
                 </NavLink>
+              )
+            }
+
+            if (role === 'SUPPLIER') {
+              return (
+                <Fragment key={role}>
+                  <NavLink to="/supplier/requests" className="sidebar-link">
+                    <span className="sidebar-link-icon">{item.icon}</span>
+                    <span className="sidebar-link-label">
+                      <span>Supplier Fulfillment</span>
+                      <small>Yêu cầu cung ứng</small>
+                    </span>
+                  </NavLink>
+                  <NavLink to="/supplier/items" className="sidebar-link">
+                    <span className="sidebar-link-icon">▤</span>
+                    <span className="sidebar-link-label">
+                      <span>Danh mục cung ứng</span>
+                      <small>Mặt hàng và năng lực</small>
+                    </span>
+                  </NavLink>
+                </Fragment>
               )
             }
 

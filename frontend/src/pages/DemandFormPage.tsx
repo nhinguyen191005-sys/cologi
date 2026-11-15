@@ -9,6 +9,8 @@ import {
   listSuppliers,
   updateDemand,
 } from '../services/api/demands'
+import { listSupplierOffers } from '../services/api/suppliers'
+import type { SupplierCatalogItem } from '../types/supplier'
 import type {
   DemandCreateInput,
   DemandItemInput,
@@ -62,6 +64,7 @@ export default function DemandFormPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [outlets, setOutlets] = useState<Outlet[]>([])
   const [items, setItems] = useState<Item[]>([])
+  const [supplierOffers, setSupplierOffers] = useState<SupplierCatalogItem[]>([])
   const [supplierId, setSupplierId] = useState('')
   const [outletId, setOutletId] = useState('')
   const [requestedDate, setRequestedDate] = useState('')
@@ -84,10 +87,11 @@ export default function DemandFormPage() {
       setIsLoading(true)
       setError('')
       try {
-        const [supplierData, outletData, itemData, demand] = await Promise.all([
+        const [supplierData, outletData, itemData, offerData, demand] = await Promise.all([
           listSuppliers(),
           listOutlets(),
           listItems(),
+          listSupplierOffers(),
           isEdit ? getDemand(demandId) : Promise.resolve(null),
         ])
 
@@ -96,6 +100,7 @@ export default function DemandFormPage() {
         setSuppliers(supplierData.filter((entry) => entry.is_active))
         setOutlets(outletData.filter((entry) => entry.is_active))
         setItems(itemData.filter((entry) => entry.is_active))
+        setSupplierOffers(offerData.filter((offer) => offer.offer_status === 'ACTIVE'))
 
         if (demand) {
           setOriginalDemand(demand)
@@ -107,7 +112,11 @@ export default function DemandFormPage() {
           setNotes(demand.notes ?? '')
           const demandRows = demand.items.map((item, index) => ({
             key: index + 1,
-            item_id: String(item.item_id),
+            item_id: offerData.some((offer) =>
+              offer.offer_status === 'ACTIVE' &&
+              offer.supplier_id === demand.supplier_id &&
+              offer.item_id === item.item_id
+            ) ? String(item.item_id) : '',
             required_weight_kg: item.required_weight_kg,
             item_note: item.item_note ?? '',
           }))
@@ -134,18 +143,48 @@ export default function DemandFormPage() {
   )
   const selectedCategoryId = selectedItems.find(Boolean)?.cargo_category_id
 
-  const availableItems = useMemo(
-    () => items.filter((item) =>
-      selectedCategoryId === undefined ||
-      item.cargo_category_id === selectedCategoryId,
-    ),
-    [items, selectedCategoryId],
-  )
+  const availableItems = useMemo(() => {
+    const supplierItemIds = new Set(
+      supplierOffers
+        .filter((offer) =>
+          offer.supplier_id === Number(supplierId) &&
+          offer.offer_status === 'ACTIVE'
+        )
+        .map((offer) => offer.item_id),
+    )
+
+    return items.filter((item) =>
+      supplierItemIds.has(item.id) &&
+      (
+        selectedCategoryId === undefined ||
+        item.cargo_category_id === selectedCategoryId
+      ),
+    )
+  }, [items, selectedCategoryId, supplierId, supplierOffers])
 
   const totalWeight = rows.reduce(
     (total, row) => total + (Number(row.required_weight_kg) || 0),
     0,
   )
+
+  function handleSupplierChange(nextSupplierId: string) {
+    setSupplierId(nextSupplierId)
+
+    const offeredItemIds = new Set(
+      supplierOffers
+        .filter((offer) =>
+          offer.supplier_id === Number(nextSupplierId) &&
+          offer.offer_status === 'ACTIVE'
+        )
+        .map((offer) => offer.item_id),
+    )
+
+    setRows((current) => current.map((row) =>
+      row.item_id && !offeredItemIds.has(Number(row.item_id))
+        ? { ...row, item_id: '' }
+        : row
+    ))
+  }
 
   function updateRow(key: number, changes: Partial<ItemRow>) {
     setRows((current) => current.map((row) =>
@@ -306,7 +345,7 @@ export default function DemandFormPage() {
           <div className="demand-form-grid">
             <label className="demand-field">
               <span>Nhà cung cấp <b>*</b></span>
-              <select value={supplierId} onChange={(event) => setSupplierId(event.target.value)} required>
+              <select value={supplierId} onChange={(event) => handleSupplierChange(event.target.value)} required>
                 <option value="">Chọn nhà cung cấp</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
@@ -361,6 +400,18 @@ export default function DemandFormPage() {
             </button>
           </div>
 
+          {!supplierId && (
+            <div className="demand-category-hint">
+              Vui lòng chọn nhà cung cấp trước khi chọn SKU.
+            </div>
+          )}
+
+          {supplierId && availableItems.length === 0 && (
+            <div className="demand-category-hint">
+              Nhà cung cấp này chưa có SKU ACTIVE phù hợp với Cargo Category đang chọn.
+            </div>
+          )}
+
           {selectedCategoryId !== undefined && (
             <div className="demand-category-hint">
               Cargo Category: {items.find((item) => item.cargo_category_id === selectedCategoryId)?.category_name}
@@ -388,18 +439,32 @@ export default function DemandFormPage() {
                     <select
                       value={row.item_id}
                       onChange={(event) => updateRow(row.key, { item_id: event.target.value })}
+                      disabled={!supplierId}
                       required
                     >
-                      <option value="">Chọn SKU</option>
-                      {availableItems.map((item) => (
-                        <option
-                          key={item.id}
-                          value={item.id}
-                          disabled={rows.some((other) => other.key !== row.key && other.item_id === String(item.id))}
-                        >
-                          {item.item_code} — {item.item_name} ({item.weight_unit})
-                        </option>
-                      ))}
+                      <option value="">
+                        {supplierId ? 'Chọn SKU được nhà cung cấp cung ứng' : 'Chọn nhà cung cấp trước'}
+                      </option>
+                      {availableItems.map((item) => {
+                        const offer = supplierOffers.find((entry) =>
+                          entry.supplier_id === Number(supplierId) &&
+                          entry.item_id === item.id &&
+                          entry.offer_status === 'ACTIVE'
+                        )
+
+                        return (
+                          <option
+                            key={item.id}
+                            value={item.id}
+                            disabled={rows.some((other) => other.key !== row.key && other.item_id === String(item.id))}
+                          >
+                            {item.item_code} — {item.item_name} ({item.weight_unit}) — {Number(offer?.unit_price_vnd_per_kg ?? 0).toLocaleString('vi-VN')} đ/kg
+                            {offer?.max_daily_supply_kg
+                              ? ` — tối đa ${Number(offer.max_daily_supply_kg).toLocaleString('vi-VN')} kg/ngày`
+                              : ''}
+                          </option>
+                        )
+                      })}
                     </select>
                   </label>
 

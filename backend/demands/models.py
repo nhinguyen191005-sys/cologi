@@ -769,6 +769,10 @@ class SupplierItemPromise(models.Model):
         choices=LineStatus.choices,
         default=LineStatus.PENDING,
     )
+    decline_reason = models.TextField(
+        blank=True,
+        default="",
+    )
     unit_price_vnd_per_kg_snapshot = models.DecimalField(
         max_digits=18,
         decimal_places=2,
@@ -870,6 +874,16 @@ class SupplierItemPromise(models.Model):
         ):
             errors["confirmed_weight_kg"] = (
                 "Confirmed weight cannot exceed promised weight."
+            )
+
+        if self.line_status == self.LineStatus.DECLINED:
+            if not self.decline_reason.strip():
+                errors["decline_reason"] = (
+                    "A decline reason is required for declined items."
+                )
+        elif self.decline_reason.strip():
+            errors["decline_reason"] = (
+                "A decline reason is only allowed for declined items."
             )
 
         if errors:

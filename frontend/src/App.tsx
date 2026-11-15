@@ -6,6 +6,9 @@ import DemandFormPage from './pages/DemandFormPage'
 import DemandDetailPage from './pages/DemandDetailPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import SupplierInboxPage from './pages/SupplierInboxPage'
+import SupplierRequestDetailPage from './pages/SupplierRequestDetailPage'
+import SupplierCatalogPage from './pages/SupplierCatalogPage'
 
 function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -25,6 +28,14 @@ function PurchasingRoute() {
     : <Navigate to="/" replace />
 }
 
+function SupplierRoute() {
+  const { user } = useAuth()
+
+  return user?.roles.includes('SUPPLIER')
+    ? <Outlet />
+    : <Navigate to="/" replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -39,6 +50,12 @@ export default function App() {
             <Route path="/demands/new" element={<DemandFormPage />} />
             <Route path="/demands/:id/edit" element={<DemandFormPage />} />
             <Route path="/demands/:id" element={<DemandDetailPage />} />
+          </Route>
+
+          <Route element={<SupplierRoute />}>
+            <Route path="/supplier/requests" element={<SupplierInboxPage />} />
+            <Route path="/supplier/requests/:id" element={<SupplierRequestDetailPage />} />
+            <Route path="/supplier/items" element={<SupplierCatalogPage />} />
           </Route>
         </Route>
       </Route>

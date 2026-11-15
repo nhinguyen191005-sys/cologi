@@ -2281,6 +2281,11 @@ class DemandSupplierSelectionServiceTests(DemandServiceTestBase):
             promised_weight_kg=promised,
             confirmed_weight_kg=confirmed,
             line_status=line_status,
+            decline_reason=(
+                "Supplier unavailable."
+                if line_status == SupplierItemPromise.LineStatus.DECLINED
+                else ""
+            ),
             unit_price_vnd_per_kg_snapshot=offer.unit_price_vnd_per_kg,
             lead_time_hours_snapshot=offer.lead_time_hours,
         )
@@ -2553,6 +2558,11 @@ class DemandCancelServiceTests(DemandServiceTestBase):
             promised_weight_kg=Decimal("10.000"),
             confirmed_weight_kg=Decimal(confirmed_weight),
             line_status=line_status,
+            decline_reason=(
+                "Supplier unavailable."
+                if line_status == SupplierItemPromise.LineStatus.DECLINED
+                else ""
+            ),
             unit_price_vnd_per_kg_snapshot=Decimal("25000.00"),
             lead_time_hours_snapshot=8,
         )
