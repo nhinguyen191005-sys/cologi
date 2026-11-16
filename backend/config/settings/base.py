@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "demands.apps.DemandsConfig",
     "suppliers.apps.SuppliersConfig",
     "transportation.apps.TransportationConfig",
+    "planning.apps.PlanningConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
