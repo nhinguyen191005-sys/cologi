@@ -199,6 +199,8 @@ def demand_data_is_valid(demand):
         return False
 
     seen_items = set()
+    total_required_weight_kg = ZERO
+
     for demand_item in items:
         item = demand_item.item
 
@@ -214,8 +216,9 @@ def demand_data_is_valid(demand):
             return False
 
         seen_items.add(demand_item.item_id)
+        total_required_weight_kg += demand_item.required_weight_kg
 
-    return True
+    return total_required_weight_kg == demand.quantity_kg
 
 
 def build_eligibility_input(

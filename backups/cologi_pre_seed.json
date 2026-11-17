@@ -1,0 +1,1507 @@
+[
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "role"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "userrole"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "externaluseraccess"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "useroutletaccess"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "auditlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "supplier"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "transportprovider"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "cargocategory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "outlet"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "item"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "supplieritem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "hub"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "vehicletype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "masterdata",
+    "model": "vehiclecargocompatibility"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "authtoken",
+    "model": "token"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "authtoken",
+    "model": "tokenproxy"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "deliverydemand"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "demanditem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "supplierconfirmation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "supplierrequest"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "supplieritempromise"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "demandsourcingoption"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "demands",
+    "model": "demandsupplierselection"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add user",
+    "content_type": [
+      "accounts",
+      "user"
+    ],
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user",
+    "content_type": [
+      "accounts",
+      "user"
+    ],
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user",
+    "content_type": [
+      "accounts",
+      "user"
+    ],
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user",
+    "content_type": [
+      "accounts",
+      "user"
+    ],
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add role",
+    "content_type": [
+      "accounts",
+      "role"
+    ],
+    "codename": "add_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change role",
+    "content_type": [
+      "accounts",
+      "role"
+    ],
+    "codename": "change_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete role",
+    "content_type": [
+      "accounts",
+      "role"
+    ],
+    "codename": "delete_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view role",
+    "content_type": [
+      "accounts",
+      "role"
+    ],
+    "codename": "view_role"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add user role",
+    "content_type": [
+      "accounts",
+      "userrole"
+    ],
+    "codename": "add_userrole"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user role",
+    "content_type": [
+      "accounts",
+      "userrole"
+    ],
+    "codename": "change_userrole"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user role",
+    "content_type": [
+      "accounts",
+      "userrole"
+    ],
+    "codename": "delete_userrole"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user role",
+    "content_type": [
+      "accounts",
+      "userrole"
+    ],
+    "codename": "view_userrole"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add external user access",
+    "content_type": [
+      "accounts",
+      "externaluseraccess"
+    ],
+    "codename": "add_externaluseraccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change external user access",
+    "content_type": [
+      "accounts",
+      "externaluseraccess"
+    ],
+    "codename": "change_externaluseraccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete external user access",
+    "content_type": [
+      "accounts",
+      "externaluseraccess"
+    ],
+    "codename": "delete_externaluseraccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view external user access",
+    "content_type": [
+      "accounts",
+      "externaluseraccess"
+    ],
+    "codename": "view_externaluseraccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add user outlet access",
+    "content_type": [
+      "accounts",
+      "useroutletaccess"
+    ],
+    "codename": "add_useroutletaccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user outlet access",
+    "content_type": [
+      "accounts",
+      "useroutletaccess"
+    ],
+    "codename": "change_useroutletaccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user outlet access",
+    "content_type": [
+      "accounts",
+      "useroutletaccess"
+    ],
+    "codename": "delete_useroutletaccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user outlet access",
+    "content_type": [
+      "accounts",
+      "useroutletaccess"
+    ],
+    "codename": "view_useroutletaccess"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add audit log",
+    "content_type": [
+      "accounts",
+      "auditlog"
+    ],
+    "codename": "add_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change audit log",
+    "content_type": [
+      "accounts",
+      "auditlog"
+    ],
+    "codename": "change_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete audit log",
+    "content_type": [
+      "accounts",
+      "auditlog"
+    ],
+    "codename": "delete_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view audit log",
+    "content_type": [
+      "accounts",
+      "auditlog"
+    ],
+    "codename": "view_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add supplier",
+    "content_type": [
+      "masterdata",
+      "supplier"
+    ],
+    "codename": "add_supplier"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change supplier",
+    "content_type": [
+      "masterdata",
+      "supplier"
+    ],
+    "codename": "change_supplier"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete supplier",
+    "content_type": [
+      "masterdata",
+      "supplier"
+    ],
+    "codename": "delete_supplier"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view supplier",
+    "content_type": [
+      "masterdata",
+      "supplier"
+    ],
+    "codename": "view_supplier"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add transport provider",
+    "content_type": [
+      "masterdata",
+      "transportprovider"
+    ],
+    "codename": "add_transportprovider"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change transport provider",
+    "content_type": [
+      "masterdata",
+      "transportprovider"
+    ],
+    "codename": "change_transportprovider"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete transport provider",
+    "content_type": [
+      "masterdata",
+      "transportprovider"
+    ],
+    "codename": "delete_transportprovider"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view transport provider",
+    "content_type": [
+      "masterdata",
+      "transportprovider"
+    ],
+    "codename": "view_transportprovider"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add cargo category",
+    "content_type": [
+      "masterdata",
+      "cargocategory"
+    ],
+    "codename": "add_cargocategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change cargo category",
+    "content_type": [
+      "masterdata",
+      "cargocategory"
+    ],
+    "codename": "change_cargocategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete cargo category",
+    "content_type": [
+      "masterdata",
+      "cargocategory"
+    ],
+    "codename": "delete_cargocategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view cargo category",
+    "content_type": [
+      "masterdata",
+      "cargocategory"
+    ],
+    "codename": "view_cargocategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add outlet",
+    "content_type": [
+      "masterdata",
+      "outlet"
+    ],
+    "codename": "add_outlet"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change outlet",
+    "content_type": [
+      "masterdata",
+      "outlet"
+    ],
+    "codename": "change_outlet"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete outlet",
+    "content_type": [
+      "masterdata",
+      "outlet"
+    ],
+    "codename": "delete_outlet"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view outlet",
+    "content_type": [
+      "masterdata",
+      "outlet"
+    ],
+    "codename": "view_outlet"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add item",
+    "content_type": [
+      "masterdata",
+      "item"
+    ],
+    "codename": "add_item"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change item",
+    "content_type": [
+      "masterdata",
+      "item"
+    ],
+    "codename": "change_item"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete item",
+    "content_type": [
+      "masterdata",
+      "item"
+    ],
+    "codename": "delete_item"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view item",
+    "content_type": [
+      "masterdata",
+      "item"
+    ],
+    "codename": "view_item"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add supplier item",
+    "content_type": [
+      "masterdata",
+      "supplieritem"
+    ],
+    "codename": "add_supplieritem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change supplier item",
+    "content_type": [
+      "masterdata",
+      "supplieritem"
+    ],
+    "codename": "change_supplieritem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete supplier item",
+    "content_type": [
+      "masterdata",
+      "supplieritem"
+    ],
+    "codename": "delete_supplieritem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view supplier item",
+    "content_type": [
+      "masterdata",
+      "supplieritem"
+    ],
+    "codename": "view_supplieritem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add hub",
+    "content_type": [
+      "masterdata",
+      "hub"
+    ],
+    "codename": "add_hub"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change hub",
+    "content_type": [
+      "masterdata",
+      "hub"
+    ],
+    "codename": "change_hub"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete hub",
+    "content_type": [
+      "masterdata",
+      "hub"
+    ],
+    "codename": "delete_hub"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view hub",
+    "content_type": [
+      "masterdata",
+      "hub"
+    ],
+    "codename": "view_hub"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add vehicle type",
+    "content_type": [
+      "masterdata",
+      "vehicletype"
+    ],
+    "codename": "add_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change vehicle type",
+    "content_type": [
+      "masterdata",
+      "vehicletype"
+    ],
+    "codename": "change_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete vehicle type",
+    "content_type": [
+      "masterdata",
+      "vehicletype"
+    ],
+    "codename": "delete_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view vehicle type",
+    "content_type": [
+      "masterdata",
+      "vehicletype"
+    ],
+    "codename": "view_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add vehicle cargo compatibility",
+    "content_type": [
+      "masterdata",
+      "vehiclecargocompatibility"
+    ],
+    "codename": "add_vehiclecargocompatibility"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change vehicle cargo compatibility",
+    "content_type": [
+      "masterdata",
+      "vehiclecargocompatibility"
+    ],
+    "codename": "change_vehiclecargocompatibility"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete vehicle cargo compatibility",
+    "content_type": [
+      "masterdata",
+      "vehiclecargocompatibility"
+    ],
+    "codename": "delete_vehiclecargocompatibility"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view vehicle cargo compatibility",
+    "content_type": [
+      "masterdata",
+      "vehiclecargocompatibility"
+    ],
+    "codename": "view_vehiclecargocompatibility"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add Token",
+    "content_type": [
+      "authtoken",
+      "token"
+    ],
+    "codename": "add_token"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change Token",
+    "content_type": [
+      "authtoken",
+      "token"
+    ],
+    "codename": "change_token"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete Token",
+    "content_type": [
+      "authtoken",
+      "token"
+    ],
+    "codename": "delete_token"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view Token",
+    "content_type": [
+      "authtoken",
+      "token"
+    ],
+    "codename": "view_token"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add Token",
+    "content_type": [
+      "authtoken",
+      "tokenproxy"
+    ],
+    "codename": "add_tokenproxy"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change Token",
+    "content_type": [
+      "authtoken",
+      "tokenproxy"
+    ],
+    "codename": "change_tokenproxy"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete Token",
+    "content_type": [
+      "authtoken",
+      "tokenproxy"
+    ],
+    "codename": "delete_tokenproxy"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view Token",
+    "content_type": [
+      "authtoken",
+      "tokenproxy"
+    ],
+    "codename": "view_tokenproxy"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add delivery demand",
+    "content_type": [
+      "demands",
+      "deliverydemand"
+    ],
+    "codename": "add_deliverydemand"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change delivery demand",
+    "content_type": [
+      "demands",
+      "deliverydemand"
+    ],
+    "codename": "change_deliverydemand"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete delivery demand",
+    "content_type": [
+      "demands",
+      "deliverydemand"
+    ],
+    "codename": "delete_deliverydemand"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view delivery demand",
+    "content_type": [
+      "demands",
+      "deliverydemand"
+    ],
+    "codename": "view_deliverydemand"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add demand item",
+    "content_type": [
+      "demands",
+      "demanditem"
+    ],
+    "codename": "add_demanditem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change demand item",
+    "content_type": [
+      "demands",
+      "demanditem"
+    ],
+    "codename": "change_demanditem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete demand item",
+    "content_type": [
+      "demands",
+      "demanditem"
+    ],
+    "codename": "delete_demanditem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view demand item",
+    "content_type": [
+      "demands",
+      "demanditem"
+    ],
+    "codename": "view_demanditem"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add supplier confirmation",
+    "content_type": [
+      "demands",
+      "supplierconfirmation"
+    ],
+    "codename": "add_supplierconfirmation"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change supplier confirmation",
+    "content_type": [
+      "demands",
+      "supplierconfirmation"
+    ],
+    "codename": "change_supplierconfirmation"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete supplier confirmation",
+    "content_type": [
+      "demands",
+      "supplierconfirmation"
+    ],
+    "codename": "delete_supplierconfirmation"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view supplier confirmation",
+    "content_type": [
+      "demands",
+      "supplierconfirmation"
+    ],
+    "codename": "view_supplierconfirmation"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add supplier request",
+    "content_type": [
+      "demands",
+      "supplierrequest"
+    ],
+    "codename": "add_supplierrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change supplier request",
+    "content_type": [
+      "demands",
+      "supplierrequest"
+    ],
+    "codename": "change_supplierrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete supplier request",
+    "content_type": [
+      "demands",
+      "supplierrequest"
+    ],
+    "codename": "delete_supplierrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view supplier request",
+    "content_type": [
+      "demands",
+      "supplierrequest"
+    ],
+    "codename": "view_supplierrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add supplier item promise",
+    "content_type": [
+      "demands",
+      "supplieritempromise"
+    ],
+    "codename": "add_supplieritempromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change supplier item promise",
+    "content_type": [
+      "demands",
+      "supplieritempromise"
+    ],
+    "codename": "change_supplieritempromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete supplier item promise",
+    "content_type": [
+      "demands",
+      "supplieritempromise"
+    ],
+    "codename": "delete_supplieritempromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view supplier item promise",
+    "content_type": [
+      "demands",
+      "supplieritempromise"
+    ],
+    "codename": "view_supplieritempromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add demand sourcing option",
+    "content_type": [
+      "demands",
+      "demandsourcingoption"
+    ],
+    "codename": "add_demandsourcingoption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change demand sourcing option",
+    "content_type": [
+      "demands",
+      "demandsourcingoption"
+    ],
+    "codename": "change_demandsourcingoption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete demand sourcing option",
+    "content_type": [
+      "demands",
+      "demandsourcingoption"
+    ],
+    "codename": "delete_demandsourcingoption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view demand sourcing option",
+    "content_type": [
+      "demands",
+      "demandsourcingoption"
+    ],
+    "codename": "view_demandsourcingoption"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add demand supplier selection",
+    "content_type": [
+      "demands",
+      "demandsupplierselection"
+    ],
+    "codename": "add_demandsupplierselection"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change demand supplier selection",
+    "content_type": [
+      "demands",
+      "demandsupplierselection"
+    ],
+    "codename": "change_demandsupplierselection"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete demand supplier selection",
+    "content_type": [
+      "demands",
+      "demandsupplierselection"
+    ],
+    "codename": "delete_demandsupplierselection"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view demand supplier selection",
+    "content_type": [
+      "demands",
+      "demandsupplierselection"
+    ],
+    "codename": "view_demandsupplierselection"
+  }
+},
+{
+  "model": "accounts.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$KZhQEsBGQjR5YmLB7ZKXam$190pwyaoWQXySwNHPAFSCPIRw/kx/jrUT1z+PbQzjBU=",
+    "is_superuser": true,
+    "email": "admin@cologi.local",
+    "full_name": "CoLogi Test",
+    "is_active": true,
+    "is_staff": true,
+    "last_login": null,
+    "created_at": "2026-11-13T18:28:39.952Z",
+    "updated_at": "2026-11-13T18:28:39.952Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "c590d2bd6da2053bb2fba18f5f50bd63667eebac",
+  "fields": {
+    "user": [
+      "admin@cologi.local"
+    ],
+    "created": "2026-11-13T18:38:16.777Z"
+  }
+}
+]

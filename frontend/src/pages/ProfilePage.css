@@ -1,0 +1,218 @@
+
+/* ==========================================
+   COLOGI - PERSONAL PROFILE PAGE
+========================================== */
+
+.profile-page {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12px 0 40px;
+  color: #193c29;
+}
+
+.profile-heading {
+  margin-bottom: 28px;
+}
+
+.profile-heading > p {
+  margin: 0 0 9px;
+  color: #1e6b3a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.profile-heading h1 {
+  margin: 0 0 9px;
+  color: #123c1b;
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.profile-heading > span {
+  display: block;
+  color: #7a8b80;
+  font-size: 14px;
+}
+
+.profile-card {
+  overflow: hidden;
+  border: 1px solid #e0eae2;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 38px rgba(18, 60, 27, 0.06);
+}
+
+.profile-banner {
+  height: 145px;
+  background: linear-gradient(
+    110deg,
+    #123c1b 0%,
+    #1e6b3a 65%,
+    #358c55 100%
+  );
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 34px 30px;
+  border-bottom: 1px solid #eaf0eb;
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 94px;
+  width: 94px;
+  height: 94px;
+  margin-top: -40px;
+
+  border: 5px solid #ffffff;
+  border-radius: 24px;
+  background: #e7f3e9;
+
+  color: #1e6b3a;
+  font-size: 28px;
+  font-weight: 800;
+  box-sizing: border-box;
+  box-shadow: 0 5px 18px rgba(18, 60, 27, 0.08);
+}
+
+.profile-identity h2 {
+  margin: 18px 0 5px;
+  color: #123c1b;
+  font-size: 23px;
+  font-weight: 750;
+}
+
+.profile-identity p {
+  margin: 0 0 12px;
+  color: #7a8c80;
+  font-size: 13px;
+}
+
+.profile-active {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: #e7f5eb;
+  color: #217b43;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.profile-section-title {
+  padding: 30px 34px 0;
+}
+
+.profile-section-title h3 {
+  margin: 0 0 7px;
+  color: #173d27;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.profile-section-title p {
+  margin: 0;
+  color: #819187;
+  font-size: 12px;
+}
+
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  padding: 22px 34px 30px;
+}
+
+.profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 19px 21px;
+
+  border: 1px solid #e5eee7;
+  border-radius: 13px;
+  background: #fafcfb;
+}
+
+.profile-info-item label {
+  display: block;
+  color: #7a8d80;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.profile-info-item strong {
+  display: block;
+  color: #244632;
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.profile-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px 34px 36px;
+}
+
+.profile-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 15px;
+
+  border: 1px solid #cbe4d1;
+  border-radius: 10px;
+  background: #eef8f0;
+
+  color: #207442;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* Responsive */
+@media (max-width: 650px) {
+  .profile-page {
+    padding-top: 0;
+  }
+
+  .profile-banner {
+    height: 110px;
+  }
+
+  .profile-identity {
+    align-items: flex-start;
+    gap: 14px;
+    padding: 0 18px 24px;
+  }
+
+  .profile-avatar {
+    flex-basis: 72px;
+    width: 72px;
+    height: 72px;
+    font-size: 23px;
+  }
+
+  .profile-identity h2 {
+    font-size: 18px;
+  }
+
+  .profile-info-grid {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+  }
+
+  .profile-section-title,
+  .profile-roles {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}

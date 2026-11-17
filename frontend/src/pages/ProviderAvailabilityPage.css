@@ -462,3 +462,190 @@
     width: 100%;
   }
 }
+
+
+/* =========================================
+   COLOGI - AVAILABILITY FILTER & PAGINATION
+========================================= */
+
+.availability-time-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.availability-time-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.availability-time-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid #dfe9e2;
+  border-radius: 10px;
+  background: #fff;
+  color: #5e7465;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+
+.availability-time-filters button:hover {
+  background: #f2f8f4;
+}
+
+.availability-time-filters button.active {
+  background: #1e6b3a;
+  border-color: #1e6b3a;
+  color: #fff;
+}
+
+.availability-time-filters button span {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 23px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #edf3ee;
+  color: #506a57;
+  font-size: 11px;
+}
+
+.availability-time-filters button.active span {
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
+}
+
+.availability-reset-button {
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: #648271;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.availability-reset-button:hover {
+  color: #1e6b3a;
+  text-decoration: underline;
+}
+
+/* Time indicators */
+
+.availability-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.availability-time-label {
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.availability-time-label.is-ongoing {
+  color: #237b48;
+}
+
+.availability-time-label.is-past {
+  color: #929e95;
+}
+
+/* Past rows remain readable */
+
+.provider-availability-table tbody tr.is-time-expired {
+  background: #fafbfa;
+}
+
+.provider-availability-table tbody tr.is-time-expired td {
+  color: #89968d;
+}
+
+.provider-availability-table tbody tr.is-time-expired strong,
+.provider-availability-table tbody tr.is-time-expired small {
+  color: #89968d;
+}
+
+/* Pagination */
+
+.availability-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 20px 4px 4px;
+}
+
+.availability-pagination-info {
+  color: #77897d;
+  font-size: 13px;
+}
+
+.availability-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.availability-pagination-actions button {
+  padding: 9px 14px;
+  border: 1px solid #dce7df;
+  border-radius: 9px;
+  background: #fff;
+  color: #1e6b3a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.availability-pagination-actions button:hover:not(:disabled) {
+  background: #eef7f0;
+  border-color: #b9d9c2;
+}
+
+.availability-pagination-actions button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.availability-page-current {
+  min-width: 85px;
+  color: #476552;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 650px) {
+  .availability-time-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .availability-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .availability-time-filters button {
+    padding: 9px 11px;
+    font-size: 12px;
+  }
+}
+

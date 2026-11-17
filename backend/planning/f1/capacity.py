@@ -94,27 +94,23 @@ def _latest_request_per_demand(
     return latest
 
 
+
 def _is_effective_commitment(
     request: SupplierRequestCommitment,
 ) -> bool:
-    """Whether the latest request still consumes Supplier capacity.
+    """Whether the latest request still consumes Supplier capacity."""
 
-    CANCELLED Demand status is intentionally not used here: cancellation
-    does not release a Supplier commitment.
-
-    CONFIRMED always consumes its confirmed quantities.
-    PARTIAL consumes its confirmed quantities only while unreleased.
-    """
     if request.request_status != "RESPONDED":
         return False
 
-    if request.confirmation_status == "CONFIRMED":
-        return True
+    # Released commitments no longer consume capacity,
+    # regardless of CONFIRMED or PARTIAL status.
+    if request.commitment_released:
+        return False
 
-    if request.confirmation_status == "PARTIAL":
-        return not request.commitment_released
+    # Demand cancellation does not itself release a commitment.
+    return request.confirmation_status in {"CONFIRMED", "PARTIAL"}
 
-    return False
 
 
 def evaluate_supplier_item_capacity(

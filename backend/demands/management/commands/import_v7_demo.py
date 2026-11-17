@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from datetime import date, datetime, time, timedelta
@@ -7,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connections, transaction
 from django.utils import timezone
 
 from accounts.models import User, UserRole
@@ -28,7 +29,63 @@ from masterdata.models import (
     SupplierItem,
 )
 
+ALLOWED_IMPORT_DATABASES = frozenset({
+    "cologi_cp08_dev",
+    "cologi_cp08_test",
+})
 
+
+def assert_safe_import_database(using="default"):
+    configured_name = settings.DATABASES[using].get("NAME")
+    if using != "default":
+        raise CommandError(
+            "Import bị chặn: importer chỉ hỗ trợ database alias default."
+        )
+
+    if set(settings.DATABASES) != {"default"}:
+        raise CommandError(
+            "Import bị chặn: phát hiện database alias ngoài phạm vi kiểm soát."
+        )
+
+    if settings.DATABASE_ROUTERS:
+        raise CommandError(
+            "Import bị chặn: database router chưa được hỗ trợ an toàn."
+        )
+    explicit_name = os.environ.get("POSTGRES_DB")
+
+    if not explicit_name:
+        raise CommandError(
+            "Import bị chặn: phải khai báo POSTGRES_DB tường minh."
+        )
+
+    if explicit_name not in ALLOWED_IMPORT_DATABASES:
+        raise CommandError(
+            "Import bị chặn: database không nằm trong CP08 allow-list."
+        )
+
+    if configured_name != explicit_name:
+        raise CommandError(
+            "Import bị chặn: database cấu hình không khớp POSTGRES_DB."
+        )
+
+    connection = connections[using]
+
+    try:
+        connection.ensure_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT current_database()")
+            actual_name = cursor.fetchone()[0]
+    except Exception as exc:
+        raise CommandError(
+            "Import bị chặn: không xác minh được database thực tế."
+        ) from exc
+
+    if actual_name != configured_name:
+        raise CommandError(
+            "Import bị chặn: database thực tế không khớp cấu hình."
+        )
+
+    return using
 MASTERDATA_CONFIG = (
     {
         "sheet": "07_Cargo_Categories",
@@ -345,6 +402,62 @@ def build_masterdata_plan(sheets):
 
     summaries["40_Items"] = item_counts
 
+    # 3. Suppliers. Import before supplier-item offers.
+    supplier_records = find_sheet_records(
+        sheets, "04_Suppliers",
+        (
+            "id", "supplier_code", "supplier_name",
+            "contact_name", "phone", "email", "address",
+            "is_active",
+        ),
+    )
+    supplier_codes = set()
+    supplier_counts = {
+        "INSERT": 0, "UNCHANGED": 0, "CONFLICT": 0,
+    }
+
+    for row in supplier_records:
+        try:
+            code = clean_text(row["supplier_code"], required=True)
+            if code in supplier_codes:
+                raise ValueError(f"Trùng supplier_code: {code}")
+            supplier_codes.add(code)
+
+            record = {
+                "supplier_name": clean_text(
+                    row["supplier_name"], required=True
+                ),
+                "contact_name": clean_text(
+                    row["contact_name"], default=None
+                ),
+                "phone": clean_text(row["phone"], default=None),
+                "email": clean_text(row["email"], default=None),
+                "address": clean_text(row["address"], default=None),
+                "is_active": clean_bool(row["is_active"]),
+            }
+
+            status, conflict = classify_record(
+                Supplier,
+                {"supplier_code": code},
+                record,
+                f"04_Suppliers row {row['_row_number']} / {code}",
+            )
+            supplier_counts[status] += 1
+            if conflict:
+                conflicts.append(conflict)
+
+            plan.append((
+                Supplier,
+                {"supplier_code": code, **record},
+                status,
+                code,
+            ))
+        except Exception as exc:
+            errors.append(
+                f"04_Suppliers row {row['_row_number']}: {exc}"
+            )
+
+    summaries["04_Suppliers"] = supplier_counts
     # 3. Supplier-item offers. Excel IDs are translated to business codes.
     supplier_item_records = find_sheet_records(
         sheets, "41_Supplier_Items",
@@ -355,6 +468,7 @@ def build_masterdata_plan(sheets):
     db_supplier_codes = set(
         Supplier.objects.values_list("supplier_code", flat=True)
     )
+    available_supplier_codes = db_supplier_codes | supplier_codes
     available_item_codes = set(
         Item.objects.values_list("item_code", flat=True)
     ) | item_codes
@@ -374,7 +488,7 @@ def build_masterdata_plan(sheets):
                 )
             if not item_code:
                 raise ValueError(f"Không ánh xạ được item_id={item_excel_id}")
-            if supplier_code not in db_supplier_codes:
+            if supplier_code not in available_supplier_codes:
                 raise ValueError(
                     f"Supplier {supplier_code} chưa tồn tại trong DB"
                 )
@@ -469,8 +583,15 @@ class Command(BaseCommand):
             help="Actually insert missing records after typing IMPORT.",
         )
 
+
     def handle(self, *args, **options):
+        database_alias = "default"
+
+        if options["apply"]:
+            database_alias = assert_safe_import_database()
+
         workbook = Path(options["workbook"])
+
         if not workbook.is_file():
             raise CommandError(f"Không tìm thấy workbook: {workbook}")
 
@@ -529,7 +650,7 @@ class Command(BaseCommand):
                 raise CommandError("Đã hủy. Database không thay đổi.")
 
             try:
-                with transaction.atomic():
+                with transaction.atomic(using=database_alias):
                     fresh_sheets = read_workbook(workbook)
                     fresh_plan, fresh_errors, fresh_conflicts, _ = (
                         build_demo_plan(fresh_sheets, options["actor_email"])
@@ -609,7 +730,7 @@ class Command(BaseCommand):
             raise CommandError("Đã hủy. Database không thay đổi.")
 
         try:
-            with transaction.atomic():
+            with transaction.atomic(using=database_alias):
                 fresh_sheets = read_workbook(workbook)
                 fresh_plan, fresh_errors, fresh_conflicts, _ = (
                     build_masterdata_plan(fresh_sheets)

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
 import { ApiError } from '../services/api/client'
 import {
   createSupplierCatalogItem,
@@ -19,6 +26,17 @@ import './SupplierCatalogPage.css'
 type CatalogFilter = 'ALL' | SupplierOfferStatus
 type FormMode = 'create' | 'edit'
 type SelectionMode = 'existing' | 'new'
+type CatalogUndo = {
+  itemId: number
+  previous: Parameters<typeof updateSupplierCatalogItem>[1]
+}
+
+type CatalogToast = {
+  id: number
+  tone: 'success' | 'error'
+  message: string
+  undo?: CatalogUndo
+}
 
 interface CatalogFormState {
   item_id: string
@@ -39,7 +57,7 @@ const emptyForm: CatalogFormState = {
   cargo_category_id: '',
   weight_unit: 'KG',
   item_description: '',
-  unit_price_vnd_per_kg: '',
+  unit_price_vnd_per_kg: '1000',
   max_daily_supply_kg: '',
   lead_time_hours: '',
   minimum_order_kg: '',
@@ -58,11 +76,17 @@ function formatNumber(value: string | number | null, suffix = ''): string {
   return `${number.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}${suffix}`
 }
 
+
 function formatPrice(value: string): string {
   const number = Number(value)
+
   if (!Number.isFinite(number)) return '—'
-  return `${number.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ₫`
+
+  return `${number.toLocaleString('vi-VN', {
+    maximumFractionDigits: Number.isInteger(number) ? 0 : 2,
+  })} ₫`
 }
+
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -88,7 +112,11 @@ export default function SupplierCatalogPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [toast, setToast] = useState<CatalogToast | null>(null)
+  const toastIdRef = useRef(0)
+const [isUndoing, setIsUndoing] = useState(false)
+const [changingItemId, setChangingItemId] =
+  useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingOptions, setIsLoadingOptions] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -99,6 +127,42 @@ export default function SupplierCatalogPage() {
   const [categories, setCategories] = useState<SupplierCargoCategory[]>([])
   const [form, setForm] = useState<CatalogFormState>(emptyForm)
 
+const notify = useCallback(
+  (
+    tone: 'success' | 'error',
+    message: string,
+    undo?: CatalogUndo
+  ) => {
+    setToast({
+      id: ++toastIdRef.current,
+      tone,
+      message,
+      undo,
+    })
+  },
+  []
+)
+
+// Thông báo thường: 3,5 giây
+// Có Hoàn tác: 6 giây
+// Thông báo lỗi: 5 giây
+useEffect(() => {
+  if (!toast) return
+
+  const duration = toast.undo
+    ? 6000
+    : toast.tone === 'error'
+      ? 5000
+      : 3500
+
+  const timer = window.setTimeout(() => {
+    setToast((current) =>
+      current?.id === toast.id ? null : current
+    )
+  }, duration)
+
+  return () => window.clearTimeout(timer)
+}, [toast])
   const loadCatalog = useCallback(async () => {
     setIsLoading(true)
     setError('')
@@ -133,7 +197,6 @@ export default function SupplierCatalogPage() {
     setEditingItem(null)
     setForm(emptyForm)
     setFormError('')
-    setSuccessMessage('')
     setShowForm(true)
     setIsLoadingOptions(true)
 
@@ -156,14 +219,13 @@ export default function SupplierCatalogPage() {
     setEditingItem(item)
     setForm({
       ...emptyForm,
-      unit_price_vnd_per_kg: item.unit_price_vnd_per_kg,
+      unit_price_vnd_per_kg: String(Number(item.unit_price_vnd_per_kg)),
       max_daily_supply_kg: item.max_daily_supply_kg ?? '',
       lead_time_hours: item.lead_time_hours?.toString() ?? '',
       minimum_order_kg: item.minimum_order_kg ?? '',
       offer_status: item.offer_status,
     })
     setFormError('')
-    setSuccessMessage('')
     setShowForm(true)
   }
 
@@ -181,13 +243,38 @@ export default function SupplierCatalogPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError('')
-    setSuccessMessage('')
 
-    const price = Number(form.unit_price_vnd_per_kg)
-    if (!Number.isFinite(price) || price < 0) {
-      setFormError('Vui lòng nhập đơn giá hợp lệ, lớn hơn hoặc bằng 0.')
-      return
-    }
+    
+
+const priceText = form.unit_price_vnd_per_kg.trim()
+const price = Number(priceText)
+
+if (
+  !/^\d+$/.test(priceText) ||
+  !Number.isSafeInteger(price) ||
+  price < 1000
+) {
+  setFormError(
+    'Đơn giá phải là số nguyên và tối thiểu 1.000 VND/kg.'
+  )
+  return
+}
+
+
+const maxDailyText = form.max_daily_supply_kg.trim()
+const minimumText = form.minimum_order_kg.trim()
+
+if (
+  maxDailyText !== '' &&
+  minimumText !== '' &&
+  Number(minimumText) > Number(maxDailyText)
+) {
+  setFormError(
+    'Số lượng đặt tối thiểu không được lớn hơn sản lượng cung ứng tối đa/ngày.'
+  )
+  return
+}
+
 
     if (form.max_daily_supply_kg.trim() !== '' &&
       (!Number.isFinite(Number(form.max_daily_supply_kg)) || Number(form.max_daily_supply_kg) < 0.001)) {
@@ -206,7 +293,12 @@ export default function SupplierCatalogPage() {
       setFormError('Lead time phải là số nguyên không âm.')
       return
     }
-
+if (form.weight_unit !== 'KG') {
+  setFormError(
+    'Phiên bản CoLogi hiện chỉ hỗ trợ đơn vị tính KG.'
+  )
+  return
+}
     if (formMode === 'create' && selectionMode === 'new') {
       if (!form.item_name.trim() || !form.cargo_category_id || !form.weight_unit.trim()) {
         setFormError('Vui lòng nhập tên mặt hàng, danh mục và đơn vị tính.')
@@ -241,8 +333,12 @@ export default function SupplierCatalogPage() {
           }
         }
 
-        await createSupplierCatalogItem(payload)
-        setSuccessMessage('Đã thêm mặt hàng cung ứng thành công.')
+await createSupplierCatalogItem(payload)
+
+notify(
+  'success',
+  'Đã thêm mặt hàng cung ứng thành công.'
+)
       } else if (editingItem) {
         await updateSupplierCatalogItem(editingItem.id, {
           unit_price_vnd_per_kg: form.unit_price_vnd_per_kg.trim(),
@@ -251,7 +347,16 @@ export default function SupplierCatalogPage() {
           minimum_order_kg: optionalNumber(form.minimum_order_kg),
           offer_status: form.offer_status,
         })
-        setSuccessMessage('Đã cập nhật điều kiện cung ứng.')
+        notify('success', 'Đã cập nhật điều kiện cung ứng.', {
+          itemId: editingItem.id,
+          previous: {
+            unit_price_vnd_per_kg: editingItem.unit_price_vnd_per_kg,
+            max_daily_supply_kg: editingItem.max_daily_supply_kg,
+            lead_time_hours: editingItem.lead_time_hours,
+            minimum_order_kg: editingItem.minimum_order_kg,
+            offer_status: editingItem.offer_status,
+          },
+        })
       }
 
       setShowForm(false)
@@ -264,29 +369,88 @@ export default function SupplierCatalogPage() {
     }
   }
 
-  const toggleOfferStatus = async (item: SupplierCatalogItem) => {
-    const nextStatus: SupplierOfferStatus =
-      item.offer_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
-    const actionLabel = nextStatus === 'ACTIVE' ? 'kích hoạt' : 'ngừng cung ứng'
 
-    if (!window.confirm(`Bạn có chắc muốn ${actionLabel} mặt hàng "${item.item_name}"?`)) {
-      return
-    }
+const undoLastChange = async () => {
+  const undo = toast?.undo
 
-    setError('')
-    setSuccessMessage('')
-    try {
-      await updateSupplierCatalogItem(item.id, { offer_status: nextStatus })
-      setSuccessMessage(
-        nextStatus === 'ACTIVE'
-          ? `Đã kích hoạt cung ứng mặt hàng "${item.item_name}".`
-          : `Đã ngừng cung ứng mặt hàng "${item.item_name}".`,
-      )
-      await loadCatalog()
-    } catch (updateError) {
-      setError(getErrorMessage(updateError))
-    }
+  if (
+    !undo ||
+    isUndoing ||
+    changingItemId !== null
+  ) {
+    return
   }
+
+  setIsUndoing(true)
+  setToast(null)
+
+  try {
+    // Khôi phục trạng thái hoặc giá trị trước khi sửa
+    await updateSupplierCatalogItem(
+      undo.itemId,
+      undo.previous
+    )
+
+    await loadCatalog()
+
+    notify(
+      'success',
+      'Đã hoàn tác. Dữ liệu trước đó đã được khôi phục.'
+    )
+  } catch (undoError) {
+    notify(
+      'error',
+      `Không thể hoàn tác: ${getErrorMessage(undoError)}`
+    )
+  } finally {
+    setIsUndoing(false)
+  }
+}
+
+const toggleOfferStatus = async (
+  item: SupplierCatalogItem
+) => {
+  if (changingItemId !== null || isUndoing) return
+
+  const previousStatus = item.offer_status
+
+  const nextStatus: SupplierOfferStatus =
+    previousStatus === 'ACTIVE'
+      ? 'INACTIVE'
+      : 'ACTIVE'
+
+  setChangingItemId(item.id)
+
+  try {
+    await updateSupplierCatalogItem(item.id, {
+      offer_status: nextStatus,
+    })
+
+    await loadCatalog()
+
+    notify(
+      'success',
+      nextStatus === 'ACTIVE'
+        ? `Đã kích hoạt cung ứng "${item.item_name}".`
+        : `Đã ngừng cung ứng "${item.item_name}".`,
+      {
+        itemId: item.id,
+        previous: {
+          offer_status: previousStatus,
+        },
+      }
+    )
+  } 
+  catch (updateError) {
+    notify(
+      'error',
+      getErrorMessage(updateError)
+    )
+  } 
+  finally {
+    setChangingItemId(null)
+  }
+}
 
   const offeredItemIds = new Set(items.map((item) => item.item_id))
   const selectableItems = availableItems.filter((item) => !offeredItemIds.has(item.id))
@@ -319,13 +483,6 @@ export default function SupplierCatalogPage() {
           </button>
         </div>
       </section>
-
-      {successMessage && (
-        <div className="supplier-catalog-success" role="status">
-          {successMessage}
-          <button type="button" onClick={() => setSuccessMessage('')} aria-label="Đóng thông báo">×</button>
-        </div>
-      )}
 
       <section className="supplier-catalog-summary" aria-label="Tổng quan danh mục">
         <article className="supplier-catalog-summary-card">
@@ -476,26 +633,57 @@ export default function SupplierCatalogPage() {
                   <>
                     <div className="supplier-catalog-form-field">
                       <span className="supplier-catalog-form-label">Nguồn mặt hàng</span>
-                      <div className="supplier-catalog-choice">
-                        <label>
-                          <input
-                            type="radio"
-                            name="selectionMode"
-                            checked={selectionMode === 'existing'}
-                            onChange={() => setSelectionMode('existing')}
-                          />
-                          Chọn mặt hàng có sẵn
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            name="selectionMode"
-                            checked={selectionMode === 'new'}
-                            onChange={() => setSelectionMode('new')}
-                          />
-                          Tạo mặt hàng mới
-                        </label>
-                      </div>
+                      
+<div className="supplier-catalog-choice">
+  <label
+    className={`supplier-catalog-choice-card ${
+      selectionMode === 'existing' ? 'is-active' : ''
+    }`}
+  >
+    <input
+      type="radio"
+      name="selectionMode"
+      checked={selectionMode === 'existing'}
+      onChange={() => setSelectionMode('existing')}
+    />
+
+    <span className="supplier-catalog-choice-number">
+      01
+    </span>
+
+    <span className="supplier-catalog-choice-content">
+      <strong>Chọn mặt hàng có sẵn</strong>
+      <small>
+        Sử dụng mặt hàng đã có trong CoLogi
+      </small>
+    </span>
+  </label>
+
+  <label
+    className={`supplier-catalog-choice-card ${
+      selectionMode === 'new' ? 'is-active' : ''
+    }`}
+  >
+    <input
+      type="radio"
+      name="selectionMode"
+      checked={selectionMode === 'new'}
+      onChange={() => setSelectionMode('new')}
+    />
+
+    <span className="supplier-catalog-choice-number">
+      02
+    </span>
+
+    <span className="supplier-catalog-choice-content">
+      <strong>Tạo mặt hàng mới</strong>
+      <small>
+        Khai báo mặt hàng chưa có trong hệ thống
+      </small>
+    </span>
+  </label>
+</div>
+
                     </div>
 
                     {selectionMode === 'existing' ? (
@@ -544,15 +732,28 @@ export default function SupplierCatalogPage() {
                               ))}
                             </select>
                           </label>
-                          <label className="supplier-catalog-form-field">
-                            <span className="supplier-catalog-form-label">Đơn vị tính <b>*</b></span>
-                            <input
-                              required
-                              value={form.weight_unit}
-                              onChange={(event) => updateForm('weight_unit', event.target.value)}
-                              placeholder="Ví dụ: KG"
-                            />
-                          </label>
+                          
+<label className="supplier-catalog-form-field">
+  <span className="supplier-catalog-form-label">
+    Đơn vị tính <b>*</b>
+  </span>
+
+  <select
+    required
+    value={form.weight_unit}
+    onChange={(event) =>
+      updateForm('weight_unit', event.target.value)
+    }
+  >
+    <option value="KG">Kilogram (kg)</option>
+  </select>
+
+  <small>
+    Hiện chuẩn hóa toàn bộ mặt hàng
+    theo kilogram (KG).
+  </small>
+</label>
+
                         </div>
                         <label className="supplier-catalog-form-field">
                           <span className="supplier-catalog-form-label">Mô tả mặt hàng</span>
@@ -583,17 +784,28 @@ export default function SupplierCatalogPage() {
                 </div>
 
                 <label className="supplier-catalog-form-field">
-                  <span className="supplier-catalog-form-label">Đơn giá (VNĐ / kg) <b>*</b></span>
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.unit_price_vnd_per_kg}
-                    onChange={(event) => updateForm('unit_price_vnd_per_kg', event.target.value)}
-                    placeholder="Nhập đơn giá"
-                  />
-                </label>
+                    <span className="supplier-catalog-form-label">
+    Đơn giá (VND/kg) <b>*</b>
+  </span>
+
+  <input
+    required
+    type="number"
+    min="1000"
+    step="1"
+    inputMode="numeric"
+    value={form.unit_price_vnd_per_kg}
+    onChange={(event) =>
+      updateForm('unit_price_vnd_per_kg', event.target.value)
+    }
+    placeholder="Tối thiểu 1.000 VND/kg"
+  />
+
+  <small>
+    Đơn giá tối thiểu: <strong>1.000 VND/kg</strong>
+  </small>
+</label>
+
 
                 <div className="supplier-catalog-form-grid">
                   <label className="supplier-catalog-form-field">
@@ -658,6 +870,47 @@ export default function SupplierCatalogPage() {
           </section>
         </div>
       )}
+
+{toast && (
+  <div
+    className={`supplier-catalog-toast ${
+      toast.tone === 'error' ? 'is-error' : ''
+    }`}
+    role={toast.tone === 'error' ? 'alert' : 'status'}
+  >
+    <span
+      className="supplier-catalog-toast-icon"
+      aria-hidden="true"
+    >
+      {toast.tone === 'success' ? '✓' : '!'}
+    </span>
+
+    <span className="supplier-catalog-toast-message">
+      {toast.message}
+    </span>
+
+    {toast.undo && (
+      <button
+        type="button"
+        className="supplier-catalog-toast-undo"
+        onClick={() => void undoLastChange()}
+        disabled={isUndoing}
+      >
+        {isUndoing ? 'Đang hoàn tác...' : 'Hoàn tác'}
+      </button>
+    )}
+
+    <button
+      type="button"
+      className="supplier-catalog-toast-close"
+      aria-label="Đóng thông báo"
+      onClick={() => setToast(null)}
+    >
+      ×
+    </button>
+  </div>
+)}
+
     </div>
   )
 }
