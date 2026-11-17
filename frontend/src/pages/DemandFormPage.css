@@ -28,7 +28,7 @@
 }
 
 .demand-form-card {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 16px;
   background: var(--color-surface, #fff);
@@ -340,5 +340,235 @@
 
   .demand-form-actions > * {
     width: 100%;
+  }
+}
+
+
+/* Time Picker */
+.demand-time-field {
+  position: relative;
+}
+
+.demand-time-trigger {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid var(--color-border, #d9e1ec);
+  border-radius: 9px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #172033);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 450;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.demand-time-trigger:hover,
+.demand-time-trigger[aria-expanded="true"] {
+  border-color: var(--color-primary, #123C1B);
+}
+
+.demand-time-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-primary, #123C1B);
+  box-shadow: 0 0 0 3px rgb(18 60 27 / 10%);
+}
+
+.time-placeholder {
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.has-time {
+  color: var(--color-text, #172033);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.demand-time-icon {
+  color: var(--color-primary, #123C1B);
+  font-size: 23px;
+}
+
+/* Popup */
+.demand-time-picker {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(100%, 340px);
+  min-width: 280px;
+  padding: 16px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 13px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 12px 35px rgb(15 23 42 / 14%);
+}
+
+.demand-time-picker-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demand-time-picker-heading strong {
+  color: var(--color-text, #172033);
+  font-size: 0.95rem;
+}
+
+.demand-time-picker-heading span {
+  color: var(--color-text-secondary, #64748b);
+  font-size: 0.76rem;
+  font-weight: 450;
+}
+
+.demand-time-preview {
+  margin: 14px 0;
+  border-radius: 9px;
+  padding: 12px;
+  background: #edf5ef;
+  color: var(--color-primary, #123C1B);
+  font-size: 1.7rem;
+  font-weight: 750;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+.demand-time-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.demand-time-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demand-time-column-label {
+  color: var(--color-text-secondary, #64748b);
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.demand-time-scroll {
+  height: 190px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 9px;
+  padding: 5px;
+  background: var(--color-background, #fafbfd);
+}
+
+.demand-time-option {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text, #172033);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  scroll-snap-align: center;
+}
+
+.demand-time-option:hover {
+  background: #edf5ef;
+}
+
+.demand-time-option.selected {
+  background: var(--color-primary, #123C1B);
+  color: #fff;
+  font-weight: 750;
+}
+
+.demand-time-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+
+.demand-time-cancel,
+.demand-time-confirm {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.demand-time-cancel {
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: #fff;
+  color: var(--color-text, #172033);
+}
+
+.demand-time-confirm {
+  border: 1px solid var(--color-primary, #123C1B);
+  background: var(--color-primary, #123C1B);
+  color: #fff;
+}
+
+.demand-time-confirm:hover {
+  filter: brightness(1.1);
+}
+
+@media (max-width: 420px) {
+  .demand-time-picker {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.demand-time-field.is-open {
+  z-index: 30;
+}
+
+/* Thông báo lỗi giờ nhận hàng */
+.demand-time-error {
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid #f3c5c5;
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #c03939;
+  font-size: 0.78rem;
+  font-weight: 550;
+  line-height: 1.45;
+  animation: time-error-appear 0.2s ease;
+}
+
+@keyframes time-error-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

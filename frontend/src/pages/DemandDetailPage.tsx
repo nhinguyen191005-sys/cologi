@@ -14,7 +14,7 @@ import type {
   DemandStatusResponse,
 } from '../types/demand'
 import './DemandDetailPage.css'
-
+import { SupplierResubmitPanel } from './foundation/SupplierResubmitPanel'
 const statusLabels: Record<DemandStatus, string> = {
   DRAFT: 'Bản nháp',
   SUBMITTED: 'Đã gửi',
@@ -119,11 +119,30 @@ export default function DemandDetailPage() {
     }
   }, [demandId, reloadKey])
 
-  const isCreator = Boolean(user && demand && user.id === demand.created_by_id)
-  const isDraft = demand?.status === 'DRAFT'
-  const canEdit = isCreator && isDraft
-  const canSubmit = isCreator && isDraft
-  const canCancel = isCreator && (demand?.status === 'DRAFT' || demand?.status === 'SUBMITTED')
+  const canWrite = Boolean(
+  user &&
+  user.roles.includes('PURCHASING_STAFF') &&
+  !user.roles.includes('MANAGER')
+)
+
+const isCreator = Boolean(
+  user &&
+  demand &&
+  user.id === demand.created_by_id
+)
+
+const isDraft = demand?.status === 'DRAFT'
+
+const canEdit = canWrite && isCreator && isDraft
+const canSubmit = canWrite && isCreator && isDraft
+
+const canCancel =
+  canWrite &&
+  isCreator &&
+  (
+    demand?.status === 'DRAFT' ||
+    demand?.status === 'SUBMITTED'
+  )
   const currentStatus = statusInfo?.status ?? demand?.status
 
   async function handleSubmitDemand() {
@@ -244,6 +263,12 @@ export default function DemandDetailPage() {
       </div>
 
       <div className="demand-detail-grid">
+        <SupplierResubmitPanel
+  demand={demand}
+  onResubmitted={() =>
+    setReloadKey((value) => value + 1)
+  }
+/>
         <article className="demand-detail-card">
           <div className="demand-detail-card-heading">
             <h2>Thông tin giao hàng</h2>

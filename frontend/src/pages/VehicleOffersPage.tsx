@@ -30,16 +30,18 @@ interface OfferFormState {
   vehicle_note: string
 }
 
+
 const emptyForm: OfferFormState = {
   available_vehicle_count: '',
   fuel_type: 'DIESEL',
   operating_start_time: '',
   operating_end_time: '',
-  fixed_quote_vnd: '',
-  estimated_cost_per_km_vnd: '',
+  fixed_quote_vnd: '1000',
+  estimated_cost_per_km_vnd: '1000',
   is_active: true,
   vehicle_note: '',
 }
+
 
 const fuelLabels: Record<ProviderFuelType, string> = {
   ELECTRIC: 'Điện',
@@ -248,35 +250,71 @@ export default function VehicleOffersPage() {
       return
     }
 
-    const start = form.operating_start_time.trim()
-    const end = form.operating_end_time.trim()
+    
+const start = form.operating_start_time.trim()
+const end = form.operating_end_time.trim()
 
-    if (Boolean(start) !== Boolean(end)) {
-      setFormError('Vui lòng khai báo cả giờ bắt đầu và giờ kết thúc, hoặc để trống cả hai.')
-      return
-    }
+// Kiểm tra giờ hoạt động
+if (Boolean(start) !== Boolean(end)) {
+  setFormError(
+    'Vui lòng nhập cả giờ bắt đầu và giờ kết thúc hoạt động.'
+  )
+  return
+}
 
-    if (start && end && start >= end) {
-      setFormError('Giờ kết thúc phải sau giờ bắt đầu.')
-      return
-    }
+if (start && end) {
+  const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 
-    const validateRate = (value: string, label: string) => {
-      if (value.trim() === '') return ''
-      const number = Number(value)
-      return Number.isFinite(number) && number >= 0
-        ? ''
-        : `${label} phải là số không âm.`
-    }
+  if (!timePattern.test(start) || !timePattern.test(end)) {
+    setFormError(
+      'Thời gian phải đúng định dạng HH:mm.'
+    )
+    return
+  }
 
-    const rateError =
-      validateRate(form.fixed_quote_vnd, 'Giá cố định') ||
-      validateRate(form.estimated_cost_per_km_vnd, 'Chi phí mỗi km')
+  if (start >= end) {
+    setFormError(
+      'Giờ kết thúc phải sau giờ bắt đầu hoạt động.'
+    )
+    return
+  }
+}
 
-    if (rateError) {
-      setFormError(rateError)
-      return
-    }
+// Kiểm tra chi phí
+const validateRate = (value: string, label: string) => {
+  const trimmed = value.trim()
+
+  // Giữ quy tắc cho phép chưa thiết lập báo giá
+  if (trimmed === '') return ''
+
+  const number = Number(trimmed)
+
+  if (!Number.isFinite(number)) {
+    return `${label} phải là số hợp lệ.`
+  }
+
+  if (!Number.isInteger(number)) {
+    return `${label} phải là số nguyên VNĐ.`
+  }
+
+  if (number < 1000) {
+    return `${label} phải từ 1.000 VNĐ trở lên.`
+  }
+
+  return ''
+}
+
+const rateError =
+  validateRate(form.fixed_quote_vnd, 'Giá cố định') ||
+  validateRate(
+    form.estimated_cost_per_km_vnd,
+    'Chi phí ước tính mỗi km'
+  )
+
+if (rateError) {
+  setFormError(rateError)
+  return
+}
 
     const commonPayload = {
       available_vehicle_count: capacity,
@@ -689,49 +727,80 @@ export default function VehicleOffersPage() {
                 </select>
               </label>
 
-              <div className="provider-offers-form-grid">
-                <label>
-                  <span>Giờ bắt đầu hoạt động</span>
-                  <input
-                    type="time"
-                    value={form.operating_start_time}
-                    onChange={(event) => updateForm('operating_start_time', event.target.value)}
-                  />
-                </label>
-                <label>
-                  <span>Giờ kết thúc hoạt động</span>
-                  <input
-                    type="time"
-                    value={form.operating_end_time}
-                    onChange={(event) => updateForm('operating_end_time', event.target.value)}
-                  />
-                </label>
-              </div>
+              
+<div className="provider-offers-form-grid">
+  <label>
+    <span>Giờ bắt đầu hoạt động</span>
+    <input
+      type="time"
+      step={60}
+      value={form.operating_start_time}
+      max={form.operating_end_time || undefined}
+      onChange={(event) =>
+        updateForm(
+          'operating_start_time',
+          event.target.value
+        )
+      }
+    />
+  </label>
 
-              <div className="provider-offers-form-grid">
-                <label>
-                  <span>Giá cố định (VNĐ)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.fixed_quote_vnd}
-                    onChange={(event) => updateForm('fixed_quote_vnd', event.target.value)}
-                    placeholder="Để trống nếu chưa thiết lập"
-                  />
-                </label>
-                <label>
-                  <span>Chi phí ước tính / km (VNĐ)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.estimated_cost_per_km_vnd}
-                    onChange={(event) => updateForm('estimated_cost_per_km_vnd', event.target.value)}
-                    placeholder="Để trống nếu chưa thiết lập"
-                  />
-                </label>
-              </div>
+  <label>
+    <span>Giờ kết thúc hoạt động</span>
+    <input
+      type="time"
+      step={60}
+      value={form.operating_end_time}
+      min={form.operating_start_time || undefined}
+      onChange={(event) =>
+        updateForm(
+          'operating_end_time',
+          event.target.value
+        )
+      }
+    />
+  </label>
+</div>
+
+
+              
+<div className="provider-offers-form-grid">
+  <label>
+    <span>Giá cố định (VNĐ)</span>
+    <input
+      type="number"
+      min="1000"
+      step="1"
+      inputMode="numeric"
+      value={form.fixed_quote_vnd}
+      onChange={(event) =>
+        updateForm('fixed_quote_vnd', event.target.value)
+      }
+      placeholder="Từ 1.000 VNĐ"
+    />
+    <small>Giá tối thiểu 1.000 VNĐ, tăng mỗi lần 1 VNĐ.</small>
+  </label>
+
+  <label>
+    <span>Chi phí ước tính / km (VNĐ)</span>
+    <input
+      type="number"
+      min="1000"
+      step="1"
+      inputMode="numeric"
+      value={form.estimated_cost_per_km_vnd}
+      onChange={(event) =>
+        updateForm(
+          'estimated_cost_per_km_vnd',
+          event.target.value
+        )
+      }
+      placeholder="Từ 1.000 VNĐ/km"
+    />
+    <small>Giá tối thiểu 1.000 VNĐ/km, tăng mỗi lần 1 VNĐ.</small>
+  </label>
+</div>
+
 
               <label>
                 <span>Ghi chú phương tiện</span>

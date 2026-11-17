@@ -32,7 +32,10 @@ def load_f1_orm_data(demand_ids) -> F1ORMData:
         DeliveryDemand.objects
         .filter(pk__in=ids)
         .select_related("supplier", "cargo_category")
-        .prefetch_related("items__item")
+        .prefetch_related(
+            "items__item",
+            "supplier_confirmations",
+        )
         .order_by("pk")
     )
 

@@ -79,6 +79,34 @@ def make_supplier_item(maximum="100"):
 
 
 class SupplierCapacityTests(unittest.TestCase):
+    def test_invalid_commitment_link_stops_capacity_evaluation(self):
+        request = make_request(
+            request_id=1,
+            demand_id=1,
+            quantity="20",
+        )
+        invalid_promise = make_promise(
+            quantity="20",
+            demand_item_id=100,
+            links_valid=False,
+        )
+        request = SupplierRequestCommitment(
+            request_id=request.request_id,
+            demand_id=request.demand_id,
+            supplier_id=request.supplier_id,
+            attempt_no=request.attempt_no,
+            requested_date=request.requested_date,
+            request_status=request.request_status,
+            confirmation_status=request.confirmation_status,
+            commitment_released=request.commitment_released,
+            promises=(invalid_promise,),
+            demand_status=request.demand_status,
+        )
+
+        result = self.evaluate([request])
+
+        self.assertEqual(result.status, CapacityStatus.INVALID_INPUT)
+        
     def test_invalid_link_is_checked_before_item_mismatch_is_skipped(self):
         request = make_request(
             request_id=1,
@@ -109,6 +137,29 @@ class SupplierCapacityTests(unittest.TestCase):
         result = self.evaluate([request])
 
         self.assertEqual(result.status, CapacityStatus.INVALID_INPUT)
+
+    def test_released_confirmed_does_not_cause_capacity_overflow(self):
+        result = self.evaluate([
+            make_request(
+                request_id=1,
+                demand_id=1,
+                confirmation_status="CONFIRMED",
+                released=True,
+                quantity="80",
+                line_status="CONFIRMED",
+            ),
+            make_request(
+                request_id=2,
+                demand_id=2,
+                confirmation_status="CONFIRMED",
+                released=False,
+                quantity="70",
+                line_status="CONFIRMED",
+            ),
+        ])
+
+        self.assertEqual(result.status, CapacityStatus.VERIFIED)
+        self.assertEqual(result.committed_weight_kg, Decimal("70"))
 
     def evaluate(self, requests, maximum="100"):
         return evaluate_supplier_item_capacity(
@@ -144,19 +195,21 @@ class SupplierCapacityTests(unittest.TestCase):
         self.assertEqual(result.status, CapacityStatus.UNVERIFIED)
         self.assertEqual(result.committed_weight_kg, Decimal("10"))
 
-    def test_unreleased_partial_confirmation_consumes_capacity(self):
+    def test_unreleased_partial_uses_confirmed_not_promised_weight(self):
         result = self.evaluate([
             make_request(
                 request_id=1,
                 demand_id=1,
                 confirmation_status="PARTIAL",
-                quantity="30",
+                released=False,
+                quantity="60",
                 line_status="PARTIAL",
             ),
         ])
 
+        self.assertEqual(result.committed_weight_kg, Decimal("60"))
         self.assertEqual(result.status, CapacityStatus.VERIFIED)
-        self.assertEqual(result.committed_weight_kg, Decimal("30"))
+        self.assertEqual(result.contributing_demand_ids, (1,))
 
     def test_released_partial_confirmation_does_not_consume_capacity(self):
         result = self.evaluate([
@@ -167,6 +220,22 @@ class SupplierCapacityTests(unittest.TestCase):
                 released=True,
                 quantity="30",
                 line_status="PARTIAL",
+            ),
+        ])
+
+        self.assertEqual(result.status, CapacityStatus.VERIFIED)
+        self.assertEqual(result.committed_weight_kg, Decimal("0"))
+        self.assertEqual(result.contributing_demand_ids, ())
+
+    def test_released_confirmed_commitment_does_not_consume_capacity(self):
+        result = self.evaluate([
+            make_request(
+                request_id=1,
+                demand_id=1,
+                confirmation_status="CONFIRMED",
+                released=True,
+                quantity="60",
+                line_status="CONFIRMED",
             ),
         ])
 
@@ -241,35 +310,6 @@ class SupplierCapacityTests(unittest.TestCase):
 
         self.assertEqual(result.status, CapacityStatus.VERIFIED)
         self.assertEqual(result.committed_weight_kg, Decimal("0"))
-
-    def test_invalid_commitment_link_stops_capacity_evaluation(self):
-        request = make_request(
-            request_id=1,
-            demand_id=1,
-            quantity="20",
-        )
-        invalid_promise = make_promise(
-            quantity="20",
-            demand_item_id=100,
-            links_valid=False,
-        )
-        request = SupplierRequestCommitment(
-            request_id=request.request_id,
-            demand_id=request.demand_id,
-            supplier_id=request.supplier_id,
-            attempt_no=request.attempt_no,
-            requested_date=request.requested_date,
-            request_status=request.request_status,
-            confirmation_status=request.confirmation_status,
-            commitment_released=request.commitment_released,
-            promises=(invalid_promise,),
-            demand_status=request.demand_status,
-        )
-
-        result = self.evaluate([request])
-
-        self.assertEqual(result.status, CapacityStatus.INVALID_INPUT)
-
 
 if __name__ == "__main__":
     unittest.main()

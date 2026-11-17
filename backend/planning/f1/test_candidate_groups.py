@@ -10,10 +10,24 @@ from planning.f1.candidate_groups import (
 )
 from planning.f1.eligibility import EligibilityStatus
 
-
+from planning.f1.cargo_compatibility import (
+    dataset_v7_cargo_compatibility_rows,
+    normalize_cargo_compatibility_matrix,
+)
 class CandidateGroupTests(unittest.TestCase):
     def setUp(self):
         self.delivery_date = date(2026, 11, 20)
+        self.cargo_compatibility_matrix = (
+            normalize_cargo_compatibility_matrix(
+                dataset_v7_cargo_compatibility_rows()
+            )
+        )
+
+    def generate(self, demands):
+        return generate_candidate_groups(
+            demands,
+            cargo_compatibility_matrix=self.cargo_compatibility_matrix,
+        )
 
     def demand(
         self,
@@ -24,9 +38,11 @@ class CandidateGroupTests(unittest.TestCase):
         status=EligibilityStatus.ELIGIBLE,
         requested_date=None,
         cargo_category_id=1,
+        outlet_id=None,
     ):
         return CandidateDemandInput(
             demand_id=demand_id,
+            outlet_id=outlet_id if outlet_id is not None else demand_id,
             eligibility_status=status,
             requested_date=(
                 requested_date
@@ -36,6 +52,7 @@ class CandidateGroupTests(unittest.TestCase):
             cargo_category_id=cargo_category_id,
             requested_start_time=start,
             requested_end_time=end,
+            
         )
 
     def test_generates_all_combinations_not_only_maximal_groups(self):
@@ -45,7 +62,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(3),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         self.assertEqual(
             [group.demand_ids for group in groups],
@@ -64,7 +81,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(3),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         appearances = [
             group.demand_ids.count(1)
@@ -83,7 +100,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(3),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         self.assertEqual(
             [group.demand_ids for group in groups],
@@ -99,7 +116,7 @@ class CandidateGroupTests(unittest.TestCase):
             ),
         ]
 
-        self.assertEqual(generate_candidate_groups(demands), ())
+        self.assertEqual(self.generate(demands), ())
 
     def test_different_cargo_categories_are_not_grouped(self):
         demands = [
@@ -107,7 +124,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(2, cargo_category_id=2),
         ]
 
-        self.assertEqual(generate_candidate_groups(demands), ())
+        self.assertEqual(self.generate(demands), ())
 
     def test_missing_demand_window_excludes_demand_from_grouping(self):
         demands = [
@@ -116,7 +133,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(3),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         self.assertEqual(
             [group.demand_ids for group in groups],
@@ -134,7 +151,7 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(3),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         self.assertEqual(
             [group.demand_ids for group in groups],
@@ -155,7 +172,7 @@ class CandidateGroupTests(unittest.TestCase):
             ),
         ]
 
-        self.assertEqual(generate_candidate_groups(demands), ())
+        self.assertEqual(self.generate(demands), ())
 
     def test_common_intersection_is_calculated_for_entire_group(self):
         # Every pair overlaps, but all three do not share one common window.
@@ -177,7 +194,7 @@ class CandidateGroupTests(unittest.TestCase):
             ),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         self.assertEqual(
             [group.demand_ids for group in groups],
@@ -203,7 +220,7 @@ class CandidateGroupTests(unittest.TestCase):
             ),
         ]
 
-        groups = generate_candidate_groups(demands)
+        groups = self.generate(demands)
 
         triple = next(
             group
@@ -216,7 +233,7 @@ class CandidateGroupTests(unittest.TestCase):
 
     def test_single_demand_does_not_create_group(self):
         self.assertEqual(
-            generate_candidate_groups([self.demand(1)]),
+            self.generate([self.demand(1)]),
             (),
         )
 
@@ -227,8 +244,8 @@ class CandidateGroupTests(unittest.TestCase):
             self.demand(2),
         ]
 
-        first = generate_candidate_groups(demands)
-        second = generate_candidate_groups(reversed(demands))
+        first = self.generate(demands)
+        second = self.generate(reversed(demands))
 
         self.assertEqual(first, second)
 
@@ -239,20 +256,43 @@ class CandidateGroupTests(unittest.TestCase):
         ]
 
         with self.assertRaises(ValueError):
-            generate_candidate_groups(demands)
+            self.generate(demands)
 
     def test_invalid_demand_id_raises_value_error(self):
         with self.assertRaises(ValueError):
-            generate_candidate_groups([self.demand(0)])
+            self.generate([self.demand(0)])
 
     def test_invalid_cargo_category_id_raises_value_error(self):
         with self.assertRaises(ValueError):
-            generate_candidate_groups([
+            self.generate([
                 self.demand(1, cargo_category_id=0)
             ])
 
     def test_empty_input_returns_no_groups(self):
-        self.assertEqual(generate_candidate_groups([]), ())
+        self.assertEqual(self.generate([]), ())
+
+    def test_same_outlet_demands_do_not_form_candidate_group(self):
+        demands = [
+            self.demand(1, outlet_id=10),
+            self.demand(2, outlet_id=10),
+            self.demand(3, outlet_id=10),
+        ]
+
+        self.assertEqual(self.generate(demands), ())
+
+    def test_candidate_group_requires_two_distinct_outlets(self):
+        demands = [
+            self.demand(1, outlet_id=10),
+            self.demand(2, outlet_id=10),
+            self.demand(3, outlet_id=20),
+        ]
+
+        groups = self.generate(demands)
+
+        self.assertEqual(
+            [group.demand_ids for group in groups],
+            [(1, 3), (2, 3), (1, 2, 3)],
+        )
 
 
 if __name__ == "__main__":

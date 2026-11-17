@@ -3,6 +3,8 @@
 
 from dataclasses import dataclass
 
+from django.core.exceptions import ValidationError
+
 from planning.f1.adapter import (
     build_capacity_requests,
     build_confirmation_result,
@@ -13,6 +15,9 @@ from planning.f1.candidate_groups import (
     CandidateDemandInput,
     CandidateGroup,
     generate_candidate_groups,
+)
+from planning.f1.cargo_compatibility import (
+    normalize_cargo_compatibility_matrix,
 )
 from planning.f1.eligibility import (
     DemandEligibilityResult,
@@ -33,12 +38,23 @@ class F1Evaluation:
     candidate_groups: tuple[CandidateGroup, ...]
 
 
-def evaluate_f1_orm_data(orm_data) -> F1Evaluation:
-    """Evaluate selected Demands and produce all valid Candidate Groups.
+def evaluate_f1_orm_data(
+    orm_data,
+    *,
+    cargo_compatibility_rows,
+) -> F1Evaluation:
+    """Evaluate selected Demands and produce valid Candidate Groups.
 
     This function is read-only. It does not create PlanningRun records,
     PlanningRunDemand rows, CollaborationGroups or GroupDemand rows.
     """
+    try:
+        cargo_compatibility_matrix = normalize_cargo_compatibility_matrix(
+            cargo_compatibility_rows
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+
     selected_demands = tuple(orm_data.selected_demands)
     all_requests = tuple(orm_data.capacity_requests)
     offers = tuple(orm_data.supplier_items)
@@ -66,6 +82,7 @@ def evaluate_f1_orm_data(orm_data) -> F1Evaluation:
 
         candidate_input = CandidateDemandInput(
             demand_id=demand.pk,
+            outlet_id=demand.outlet_id,
             eligibility_status=eligibility.eligibility_status.value,
             requested_date=demand.requested_date,
             cargo_category_id=demand.cargo_category_id,
@@ -80,10 +97,12 @@ def evaluate_f1_orm_data(orm_data) -> F1Evaluation:
                 candidate_input=candidate_input,
             )
         )
-
         candidate_inputs.append(candidate_input)
 
-    groups = generate_candidate_groups(tuple(candidate_inputs))
+    groups = generate_candidate_groups(
+        tuple(candidate_inputs),
+        cargo_compatibility_matrix=cargo_compatibility_matrix,
+    )
 
     return F1Evaluation(
         demand_evaluations=tuple(evaluations),

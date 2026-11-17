@@ -1,0 +1,308 @@
+
+/* =========================================
+   COLOGI - ANALYTICS DASHBOARD
+========================================= */
+
+.cla-section {
+  display: grid;
+  gap: 17px;
+  min-width: 0;
+  margin-top: 4px;
+  color: #193C29;
+}
+
+.cla-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cla-kicker,
+.cla-card header > span {
+  display: block;
+  color: #3D8857;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.5px;
+}
+
+.cla-heading h2 {
+  margin: 6px 0;
+  font-size: 25px;
+  letter-spacing: -0.6px;
+}
+
+.cla-heading p,
+.cla-card header p {
+  margin: 0;
+  font-size: 12px;
+  color: #7A8D7E;
+  line-height: 1.55;
+}
+
+/* FILTER */
+
+.cla-range {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid #DCE9DE;
+  background: #F8FBF8;
+  border-radius: 12px;
+}
+
+.cla-range button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #607A67;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cla-range button:hover {
+  background: #E9F3EB;
+}
+
+.cla-range button.active {
+  color: #FFF;
+  background: #1E6B3A;
+  box-shadow: 0 3px 10px
+    rgba(18, 60, 27, 0.13);
+}
+
+.cla-range button:focus-visible {
+  outline: 2px solid #D5B85A;
+  outline-offset: 2px;
+}
+
+/* CHART LAYOUT */
+
+.cla-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.cla-card {
+  min-width: 0;
+  overflow: hidden;
+
+  padding: 22px 22px 15px;
+
+  background: #FFF;
+  border: 1px solid #DFEADF;
+  border-radius: 20px;
+
+  box-shadow:
+    0 8px 25px rgba(18, 60, 27, 0.045);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cla-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 33px rgba(18, 60, 27, 0.08);
+}
+
+.cla-card header {
+  min-height: 96px;
+}
+
+.cla-card h3 {
+  margin: 7px 0;
+  color: #173B26;
+  font-size: 18px;
+  letter-spacing: -0.35px;
+}
+
+/* SVG CHARTS */
+
+.cla-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  margin-top: 4px;
+}
+
+.cla-svg rect,
+.cla-svg circle {
+  transition: opacity 0.2s ease;
+}
+
+.cla-svg rect:hover,
+.cla-svg circle:hover {
+  opacity: 0.8;
+}
+
+/* LEGENDS */
+
+.cla-legend {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+
+  margin: 2px 0 12px;
+
+  color: #677E6C;
+  font-size: 11px;
+}
+
+.cla-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cla-legend i,
+.cla-dot {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  flex: none;
+  border-radius: 3px;
+}
+
+/* DONUT */
+
+.cla-card--pie {
+  grid-column: 1 / -1;
+}
+
+.cla-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.cla-donut {
+  width: 240px;
+  max-width: 44%;
+  flex: none;
+}
+
+.cla-donut-legend {
+  display: grid;
+  gap: 12px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.cla-donut-legend > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 12px;
+  color: #6C806F;
+}
+
+.cla-donut-legend
+> div span:nth-child(2) {
+  flex: 1;
+}
+
+.cla-donut-legend strong {
+  color: #183D26;
+  font-size: 13px;
+}
+
+/* EMPTY / LOADING / ERROR */
+
+.cla-empty,
+.cla-loading {
+  display: grid;
+  place-items: center;
+
+  min-height: 220px;
+  padding: 20px;
+
+  text-align: center;
+  color: #819285;
+  font-size: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #F5FAF6,
+    #FBFDFB
+  );
+
+  border: 1px dashed #DCE9DE;
+  border-radius: 13px;
+}
+
+.cla-loading {
+  min-height: 140px;
+}
+
+.cla-error {
+  color: #AB483C;
+  background: #FFF6F4;
+  border-color: #F1C7C2;
+}
+
+.cla-note {
+  margin: 0;
+  color: #819285;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1080px) {
+  .cla-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cla-card--pie {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .cla-card {
+    padding: 16px 12px;
+  }
+
+  .cla-card header {
+    min-height: auto;
+    margin-bottom: 16px;
+  }
+
+  .cla-donut-wrap {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .cla-donut {
+    width: 200px;
+    max-width: 75%;
+  }
+
+  .cla-donut-legend {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cla-card,
+  .cla-svg rect,
+  .cla-svg circle {
+    transition: none;
+  }
+}

@@ -8,7 +8,9 @@ import type { BusinessRole } from '../types/auth'
 import type { DeliveryDemand, DemandStatus } from '../types/demand'
 import type { SupplierRequest } from '../types/supplier'
 import './HomePage.css'
-
+import RoleAnalytics, {
+  DonutChart,
+} from './foundation/RoleAnalytics'
 type IconName = 'grid' | 'box' | 'truck' | 'clock' | 'check' | 'arrow' | 'chevron'
   | 'shield' | 'refresh' | 'calendar' | 'alert' | 'file' | 'layers' | 'spark' | 'user'
 
@@ -395,6 +397,83 @@ export default function HomePage() {
   const nearDemands = openDemands.filter((row) => row.requested_date <= nearDay)
   const overdueDemands = nearDemands.filter((row) => row.requested_date < today)
   const waitingRequests = requests.filter((row) => row.request_status === 'WAITING')
+  
+const supplierResponseSlices = [
+  {
+    label: 'Chờ phản hồi',
+    value: requests.filter(
+      (row) => row.request_status === 'WAITING'
+    ).length,
+    color: '#D5B85A',
+  },
+  {
+    label: 'Xác nhận đủ',
+    value: requests.filter(
+      (row) =>
+        row.request_status === 'RESPONDED' &&
+        row.confirmation_status === 'CONFIRMED'
+    ).length,
+    color: '#1E6B3A',
+  },
+  {
+    label: 'Xác nhận một phần',
+    value: requests.filter(
+      (row) =>
+        row.request_status === 'RESPONDED' &&
+        row.confirmation_status === 'PARTIAL'
+    ).length,
+    color: '#6496AD',
+  },
+  {
+    label: 'Từ chối',
+    value: requests.filter(
+      (row) =>
+        row.request_status === 'RESPONDED' &&
+        row.confirmation_status === 'DECLINED'
+    ).length,
+    color: '#BD756B',
+  },
+  {
+    label: 'Khác',
+    value: requests.filter(
+      (row) =>
+        row.request_status === 'RESPONDED' &&
+        !['CONFIRMED', 'PARTIAL', 'DECLINED'].includes(
+          row.confirmation_status
+        )
+    ).length,
+    color: '#9BAE9F',
+  },
+]
+
+const managerDemandSlices = [
+  {
+    label: 'Bản nháp',
+    value: countStatus(demands, 'DRAFT'),
+    color: '#1E6B3A',
+  },
+  {
+    label: 'Đã gửi',
+    value: countStatus(demands, 'SUBMITTED'),
+    color: '#D5B85A',
+  },
+  {
+    label: 'Đang lập kế hoạch',
+    value: countStatus(demands, 'PLANNING'),
+    color: '#4BB169',
+  },
+  {
+    label: 'Đã lập kế hoạch',
+    value: countStatus(demands, 'PLANNED'),
+    color: '#6496AD',
+  },
+  {
+    label: 'Đã hủy',
+    value: countStatus(demands, 'CANCELLED'),
+    color: '#9BAE9F',
+  },
+]
+
   const soonRequests = waitingRequests.filter((row) => row.demand.requested_date <= nearDay)
   const activeOffers = transport?.offers.filter((row) => row.is_active) ?? []
   const activeCoverage = transport?.coverages.filter((row) => row.coverage_status === 'ACTIVE' && row.can_pickup) ?? []
@@ -425,28 +504,76 @@ export default function HomePage() {
       { label: 'Đang lập kế hoạch', value: countStatus(demands, 'PLANNING'), color: 'mint' },
       { label: 'Đã lập kế hoạch', value: countStatus(demands, 'PLANNED'), color: 'green' },
     ]
-    workItems = [...demands]
-  // Chỉ lấy demand do tài khoản hiện tại tạo
-  .filter((row) => row.created_by_id === user.id)
+    
+    if (activeRole === 'MANAGER') {
+      // Manager giám sát tất cả demand trong phạm vi API cho phép.
+      // Ưu tiên demand chưa được lập kế hoạch.
+      const needsMonitoring = [...demands]
+        .filter(
+          (row) =>
+            row.status === 'SUBMITTED' ||
+            row.status === 'PLANNING'
+        )
+        .sort((a, b) =>
+          a.requested_date.localeCompare(b.requested_date)
+        )
 
-  // Chỉ giữ những demand cần theo dõi, xử lý
-  .filter((row) =>
-    row.status === 'DRAFT' ||
-    row.status === 'SUBMITTED' ||
-    row.status === 'PLANNING'
-  )
-        .sort((a, b) => Number(a.status !== 'DRAFT') - Number(b.status !== 'DRAFT') || a.requested_date.localeCompare(b.requested_date))
-      .slice(0, 5)
-      .map((row) => ({
-        id: `d-${row.id}`, title: `${row.demand_code} · ${row.outlet_name}`,
-        detail: `Ngày nhận ${shortDate(row.requested_date)} · ${row.supplier_name}`,
-        status: demandLabels[row.status], tone: row.status === 'DRAFT' ? 'gold' : 'blue',
-        to: row.status === 'DRAFT' && canModifyDemands ? `/demands/${row.id}/edit` : `/demands/${row.id}`,
+      // Nếu không có hồ sơ đang chờ lập kế hoạch,
+      // hiển thị những demand gần đây để Manager vẫn có
+      // thông tin theo dõi, không tạo dữ liệu giả.
+      const managerRows = needsMonitoring.length
+        ? needsMonitoring.slice(0, 5)
+        : [...demands]
+            .filter((row) => row.status !== 'CANCELLED')
+            .sort((a, b) => b.id - a.id)
+            .slice(0, 5)
+
+      workItems = managerRows.map((row) => ({
+        id: `d-${row.id}`,
+        title: `${row.demand_code} · ${row.outlet_name}`,
+        detail:
+          `Ngày nhận ${shortDate(row.requested_date)} · ${row.supplier_name}`,
+        status: demandLabels[row.status],
+        tone:
+          row.status === 'DRAFT'
+            ? 'gold'
+            : row.status === 'PLANNED'
+              ? 'green'
+              : 'blue',
+        // Manager chỉ được xem chi tiết, không được chỉnh sửa.
+        to: `/demands/${row.id}`,
       }))
-    shortcuts = [
-      { label: 'Danh sách nhu cầu', description: 'Xem và theo dõi hồ sơ', to: '/demands', icon: 'file' },
-      ...(canModifyDemands ? [{ label: 'Tạo nhu cầu', description: 'Tạo nhu cầu giao hàng mới', to: '/demands/new', icon: 'box' as const }] : []),
-    ]
+    } else {
+      // Purchasing Staff chỉ thấy demand do chính mình tạo.
+      workItems = [...demands]
+        .filter((row) => row.created_by_id === user.id)
+        .filter(
+          (row) =>
+            row.status === 'DRAFT' ||
+            row.status === 'SUBMITTED' ||
+            row.status === 'PLANNING'
+        )
+        .sort(
+          (a, b) =>
+            Number(a.status !== 'DRAFT') -
+              Number(b.status !== 'DRAFT') ||
+            a.requested_date.localeCompare(b.requested_date)
+        )
+        .slice(0, 5)
+        .map((row) => ({
+          id: `d-${row.id}`,
+          title: `${row.demand_code} · ${row.outlet_name}`,
+          detail:
+            `Ngày nhận ${shortDate(row.requested_date)} · ${row.supplier_name}`,
+          status: demandLabels[row.status],
+          tone: row.status === 'DRAFT' ? 'gold' : 'blue',
+          to:
+            row.status === 'DRAFT' && canModifyDemands
+              ? `/demands/${row.id}/edit`
+              : `/demands/${row.id}`,
+        }))
+    }
+
     alertText = overdueDemands.length
       ? `${overdueDemands.length} nhu cầu chưa có trạng thái “Đã lập kế hoạch” và đã qua ngày nhận dự kiến.`
       : nearDemands.length
@@ -469,14 +596,49 @@ export default function HomePage() {
       { label: 'Chờ phản hồi', value: waitingRequests.length, color: 'gold' },
       { label: 'Đã phản hồi', value: requests.filter((row) => row.request_status === 'RESPONDED').length, color: 'green' },
     ]
-    workItems = [...waitingRequests]
-      .sort((a, b) => a.demand.requested_date.localeCompare(b.demand.requested_date))
-      .slice(0, 5)
-      .map((row) => ({
-        id: `s-${row.id}`, title: `${row.request_code} · ${row.demand.outlet_name}`,
-        detail: `Ngày nhận ${shortDate(row.demand.requested_date)} · ${row.items.length} mặt hàng`,
-        status: 'Chờ phản hồi', tone: 'gold', to: `/supplier/requests/${row.id}`,
-      }))
+
+const supplierWorkList =
+  waitingRequests.length > 0
+    ? [...waitingRequests].sort((a, b) =>
+        a.demand.requested_date.localeCompare(
+          b.demand.requested_date
+        )
+      )
+    : [...requests]
+        .filter(
+          (row) => row.request_status === 'RESPONDED'
+        )
+        .sort((a, b) =>
+          (b.responded_at ?? '').localeCompare(
+            a.responded_at ?? ''
+          )
+        )
+
+workItems = supplierWorkList
+  .slice(0, 5)
+  .map((row) => ({
+    id: `s-${row.id}`,
+
+    title:
+      `${row.request_code} · ` +
+      row.demand.outlet_name,
+
+    detail:
+      `Ngày nhận ${shortDate(row.demand.requested_date)}` +
+      ` · ${row.items.length} mặt hàng`,
+
+    status:
+      row.request_status === 'WAITING'
+        ? 'Chờ phản hồi'
+        : 'Đã phản hồi',
+
+    tone:
+      row.request_status === 'WAITING'
+        ? 'gold'
+        : 'green',
+
+    to: `/supplier/requests/${row.id}`,
+  }))
     shortcuts = [
       { label: 'Hộp thư yêu cầu', description: 'Xác nhận yêu cầu cung ứng', to: '/supplier/requests', icon: 'file' },
       { label: 'Danh mục mặt hàng', description: 'Quản lý các mặt hàng của bạn', to: '/supplier/items', icon: 'box' },
@@ -594,17 +756,33 @@ export default function HomePage() {
 
       <div className="clh-main-grid">
         <section className="clh-panel clh-tasks">
-          <div className="clh-section-head"><div><span className="clh-section-eyebrow">PRIORITY INBOX</span><h3>{isTransport
-    ? 'Lịch xe sắp tới'
-    : isPurchasing
-      ? 'Demand của tôi cần xử lý'
-      : 'Yêu cầu chờ phản hồi'}</h3><p>
+          <div className="clh-section-head"><div><span className="clh-section-eyebrow">
+  {activeRole === 'MANAGER'
+    ? 'MANAGEMENT WATCHLIST'
+    : 'PRIORITY INBOX'}
+</span>
+<h3>
   {isTransport
-    ? 'Các khung lịch đã khai báo, sắp xếp theo ngày'
-    : isPurchasing
+    ? 'Lịch xe sắp tới'
+    : isSupplier
+      ? waitingRequests.length > 0
+        ? 'Yêu cầu cần phản hồi'
+        : 'Phản hồi gần đây'
+      : activeRole === 'MANAGER'
+        ? 'Nhu cầu cần theo dõi'
+        : 'Công việc cần xử lý'}
+</h3>
+
+<p>
+  {activeRole === 'MANAGER'
+    ? 'Theo dõi nhu cầu của các nhân viên trong phạm vi quản lý · Chỉ xem'
+    : activeRole === 'PURCHASING_STAFF'
       ? 'Chỉ hiển thị demand do chính tài khoản của bạn tạo'
-      : 'Các yêu cầu gửi tới nhà cung cấp của bạn'}
-</p></div><span className="clh-section-icon"><Icon name={isTransport ? 'calendar' : 'file'} /></span></div>
+      : activeRole === 'SUPPLIER'
+        ? 'Các yêu cầu cung ứng đang cần phản hồi'
+        : 'Các khung lịch xe sắp tới'}
+</p>
+</div><span className="clh-section-icon"><Icon name={isTransport ? 'calendar' : 'file'} /></span></div>
           {loading ? <div className="clh-task-loading"><div className="clh-skeleton" /><div className="clh-skeleton" /><div className="clh-skeleton" /></div>
             : error ? <div className="clh-empty"><Icon name="alert" size={23} /><strong>Chưa thể tải danh sách</strong><p>Vui lòng kiểm tra kết nối Backend.</p></div>
               : workItems.length ? <div className="clh-task-list">{workItems.map((item) => {
@@ -617,68 +795,150 @@ export default function HomePage() {
           {topAction && <Link className="clh-panel-link" to={topAction.to}>Xem toàn bộ trong {topAction.label.toLocaleLowerCase('vi-VN')} <Icon name="arrow" size={17} /></Link>}
         </section>
 
-        <section className="clh-panel clh-progress">
-          <div className="clh-section-head"><div><span className="clh-section-eyebrow">STATUS BREAKDOWN</span><h3>{isTransport ? 'Tình trạng lịch xe' : 'Tiến trình xử lý'}</h3><p>Phân bổ theo trạng thái hiện tại</p></div><span className="clh-section-icon"><Icon name="grid" /></span></div>
-          {loading ? <div className="clh-task-loading"><div className="clh-skeleton" /><div className="clh-skeleton" /></div>
-            : error ? <p className="clh-muted">Chưa có dữ liệu để phân tích.</p>
-              : workflowTotal === 0 ? <div className="clh-empty compact"><Icon name="layers" /><strong>Chưa có dữ liệu thống kê</strong></div>
-                : <div className="clh-progress-content">
-                  <div className="clh-progress-total"><strong>{numberFormat.format(workflowTotal)}</strong><span>{isTransport ? 'khung lịch trong 7 ngày' : isSupplier ? 'yêu cầu' : 'nhu cầu đang theo dõi'}</span></div>
-                  <div className="clh-stacked-bar" aria-label="Tỷ trọng theo trạng thái">{workflow.filter((step) => step.value > 0).map((step) => <div key={step.label} className={`clh-bar-segment ${step.color}`} style={{ width: `${step.value / workflowTotal * 100}%` }} title={`${step.label}: ${step.value}`} />)}</div>
-                  <div className="clh-progress-legend">{workflow.map((step) => <div className="clh-legend-row" key={step.label}><span className={`clh-legend-dot ${step.color}`} /><span>{step.label}</span><b>{numberFormat.format(step.value)}</b></div>)}</div>
-                </div>}
-          {isPurchasing && <div className="clh-dss-note"><Icon name="spark" size={17} /><p><strong>DSS Workspace</strong><br />So sánh phương án và tối ưu chi phí sẽ kết nối khi API DSS được triển khai.</p></div>}
-          {isTransport && <div className="clh-dss-note"><Icon name="shield" size={17} /><p><strong>Phạm vi vận chuyển</strong><br />{loading || error ? 'Đang chờ dữ liệu.' : transport?.profile.service_region || 'Chưa khai báo vùng phục vụ.'}</p></div>}
-        </section>
-      </div>
-
-      <div className="clh-secondary-grid">
-        <section className="clh-panel clh-shortcuts"><div className="clh-section-head"><div><span className="clh-section-eyebrow">QUICK ACTIONS</span><h3>Truy cập nhanh</h3></div><span className="clh-section-icon"><Icon name="arrow" /></span></div>
-          {shortcuts.length ? <div className="clh-shortcut-list">{shortcuts.map((item) => <Link key={item.to} to={item.to} className="clh-shortcut"><span><Icon name={item.icon} size={21} /></span><div><b>{item.label}</b><small>{item.description}</small></div><Icon name="chevron" size={17} /></Link>)}</div>
-            : <div className="clh-empty compact"><Icon name="truck" /><strong>Chưa có trang vận chuyển trong router</strong><p>Dashboard này vẫn đọc dữ liệu phương tiện qua API hiện tại. Việc thêm trang chỉnh sửa cần nhóm tích hợp route sau.</p></div>}
-        </section>
-        
-<section className="clh-panel clh-account">
-  <div className="clh-section-head">
-    <div>
-      <span className="clh-section-eyebrow">
-        ACCESS GUIDE
-      </span>
-      <h3>Quyền thao tác của bạn</h3>
-    </div>
-
-    <span className="clh-section-icon">
-      <Icon name="shield" />
+<section className="clh-panel clh-progress">
+ 
+<div className="clh-section-head">
+  <div>
+    <span className="clh-section-eyebrow">
+      {activeRole === 'MANAGER' || isSupplier
+        ? '03 · CƠ CẤU'
+        : 'STATUS BREAKDOWN'}
     </span>
-  </div>
 
-  <div className="clh-access-guide">
-    <strong>
-      {activeRole
-        ? roleNames[activeRole]
-        : 'Chưa phân quyền'}
-    </strong>
+    <h3>
+      {activeRole === 'MANAGER'
+        ? 'Cơ cấu trạng thái nhu cầu'
+        : isSupplier
+          ? 'Kết quả phản hồi cung ứng'
+          : isTransport
+            ? 'Tình trạng lịch xe'
+            : 'Tiến trình xử lý'}
+    </h3>
 
     <p>
       {activeRole === 'MANAGER'
-        ? 'Bạn có quyền xem danh sách và chi tiết nhu cầu, không được tạo, chỉnh sửa hoặc xóa.'
-        : activeRole === 'PURCHASING_STAFF'
-          ? canModifyDemands
-            ? 'Bạn được tạo và cập nhật demand trong phạm vi Backend cấp quyền.'
-            : 'Tài khoản có vai trò Manager nên không được tạo hoặc chỉnh sửa demand.'
-          : activeRole === 'SUPPLIER'
-            ? 'Bạn có thể xem và phản hồi yêu cầu cung ứng, quản lý danh mục mặt hàng theo quyền.'
-            : 'Bạn có thể xem dữ liệu xe, lịch khả dụng và phạm vi phục vụ. Các trang thao tác riêng chưa có route.'}
+        ? 'Tổng hợp các nhu cầu trong phạm vi quản lý'
+        : isSupplier
+          ? 'Phân loại theo tình trạng phản hồi hiện tại'
+          : 'Phân bổ theo trạng thái hiện tại'}
     </p>
   </div>
 
-  <div className="clh-account-foot">
-    <Icon name="shield" size={15} />
-    Quyền thực tế tiếp tục được Backend kiểm tra
-    ở từng API.
-  </div>
-</section>
+  <span className="clh-section-icon">
+    <Icon name="grid" />
+  </span>
+</div>
+
+  {loading ? (
+    <div className="clh-task-loading">
+      <div className="clh-skeleton" />
+      <div className="clh-skeleton" />
+    </div>
+  ) : error ? (
+    <p className="clh-muted">
+      Chưa thể tải dữ liệu để phân tích.
+    </p>
+
+) : activeRole === 'MANAGER' ? (
+  <DonutChart slices={managerDemandSlices} />
+) : isSupplier ? (
+  <DonutChart slices={supplierResponseSlices} />
+) : workflowTotal === 0 ? (
+
+    <div className="clh-empty compact">
+      <Icon name="layers" />
+      <strong>Chưa có dữ liệu thống kê</strong>
+    </div>
+  ) : (
+    <div className="clh-progress-content">
+      <div className="clh-progress-total">
+        <strong>
+          {numberFormat.format(workflowTotal)}
+        </strong>
+        <span>
+          {isTransport
+            ? 'khung lịch trong 7 ngày'
+            : 'nhu cầu đang theo dõi'}
+        </span>
       </div>
+
+      <div
+        className="clh-stacked-bar"
+        aria-label="Tỷ trọng theo trạng thái"
+      >
+        {workflow
+          .filter((step) => step.value > 0)
+          .map((step) => (
+            <div
+              key={step.label}
+              className={`clh-bar-segment ${step.color}`}
+              style={{
+                width: `${
+                  (step.value / workflowTotal) * 100
+                }%`,
+              }}
+              title={`${step.label}: ${step.value}`}
+            />
+          ))}
+      </div>
+
+      <div className="clh-progress-legend">
+        {workflow.map((step) => (
+          <div
+            className="clh-legend-row"
+            key={step.label}
+          >
+            <span
+              className={`clh-legend-dot ${step.color}`}
+            />
+            <span>{step.label}</span>
+            <b>{numberFormat.format(step.value)}</b>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {isPurchasing && (
+    <div className="clh-dss-note">
+      <Icon name="spark" size={17} />
+      <p>
+        <strong>DSS Workspace</strong>
+        {' '}
+        So sánh phương án và tối ưu chi phí
+        sẽ kết nối khi API DSS được triển khai.
+      </p>
+    </div>
+  )}
+
+  {isTransport && (
+    <div className="clh-dss-note">
+      <Icon name="shield" size={17} />
+      <p>
+        <strong>Phạm vi vận chuyển</strong>
+        {' '}
+        {loading || error
+          ? 'Đang chờ dữ liệu.'
+          : transport?.profile.service_region ||
+            'Chưa khai báo vùng phục vụ.'}
+      </p>
+    </div>
+  )}
+</section>
+
+      </div>
+
+{activeRole && (
+  <RoleAnalytics
+    activeRole={activeRole}
+    userId={user.id}
+    demands={demands}
+    requests={requests}
+    transport={transport}
+    loading={loading}
+    error={error}
+  />
+)}
       <footer className="clh-footer"><span><Icon name="shield" size={16} /> CoLogi · Smart Operations Dashboard</span><span>{updatedLabel}</span></footer>
     </main>
   )

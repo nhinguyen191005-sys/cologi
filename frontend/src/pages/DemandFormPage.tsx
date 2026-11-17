@@ -51,9 +51,201 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Không thể lưu nhu cầu. Vui lòng thử lại.'
 }
 
+// Chuẩn hóa giờ theo định dạng 24 tiếng HH:mm
+function normalizeTime(value: string): string | null {
+  const trimmed = value.trim()
+
+  // Bắt buộc có dấu : và đủ phút
+  const match = trimmed.match(/^(\d{1,2}):([0-5]\d)$/)
+
+  if (!match) return null
+
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+
+  if (hours > 23) return null
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 function toDateInput(value: string): string {
   return value ? value.slice(0, 10) : ''
 }
+
+
+interface TimePickerFieldProps {
+  label: string
+  value: string
+  startTime?: string
+  onChange: (value: string) => void
+}
+
+function TimePickerField({
+  label,
+  value,
+  startTime,
+  onChange,
+}: TimePickerFieldProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedHour, setSelectedHour] = useState('08')
+  const [selectedMinute, setSelectedMinute] = useState('00')
+  const [timeError, setTimeError] = useState('')
+
+  const hours = Array.from({ length: 24 }, (_, index) =>
+    String(index).padStart(2, '0')
+  )
+
+  const minutes = Array.from({ length: 60 }, (_, index) =>
+    String(index).padStart(2, '0')
+  )
+
+  useEffect(() => {
+    if (isOpen) {
+      const [hour = '08', minute = '00'] = value
+        ? value.split(':')
+        : []
+
+      setSelectedHour(hour)
+      setSelectedMinute(minute)
+    }
+  }, [isOpen, value])
+
+  useEffect(() => {
+    if (!timeError) return
+
+    const timeoutId = window.setTimeout(() => {
+      setTimeError('')
+    }, 3000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [timeError])
+
+  function confirmTime() {
+    const selectedTime = `${selectedHour}:${selectedMinute}`
+
+    // Kiểm tra giờ kết thúc phải sau giờ bắt đầu
+    if (label === 'Giờ kết thúc nhận') {
+      if (!startTime) {
+        setTimeError('Vui lòng chọn giờ bắt đầu nhận trước.')
+        return
+      }
+
+      if (selectedTime <= startTime) {
+        setTimeError('Giờ kết thúc phải sau giờ bắt đầu nhận.')
+        return
+      }
+    }
+
+    // Nếu hợp lệ thì xóa cảnh báo và xác nhận giờ
+    setTimeError('')
+    onChange(selectedTime)
+    setIsOpen(false)
+  }
+
+  return (
+    <div className={`demand-field demand-time-field ${isOpen ? 'is-open' : ''}`}>
+      <span>{label}</span>
+
+      <button
+        type="button"
+        className="demand-time-trigger"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-expanded={isOpen}
+        aria-label={`${label}: ${value || 'Chưa chọn giờ'}`}
+      >
+        <span className={value ? 'has-time' : 'time-placeholder'}>
+          {value || '--:--'}
+        </span>
+        <span className="demand-time-icon" aria-hidden="true">
+          ◷
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="demand-time-picker">
+          <div className="demand-time-picker-heading">
+            <strong>Chọn giờ nhận</strong>
+            <span>Định dạng 24 giờ</span>
+          </div>
+
+          <div className="demand-time-preview">
+            {selectedHour}:{selectedMinute}
+          </div>
+
+          <div className="demand-time-columns">
+            <div className="demand-time-column">
+              <span className="demand-time-column-label">GIỜ</span>
+
+              <div className="demand-time-scroll">
+                {hours.map((hour) => (
+                  <button
+                    type="button"
+                    key={hour}
+                    className={
+                      selectedHour === hour
+                        ? 'demand-time-option selected'
+                        : 'demand-time-option'
+                    }
+                    onClick={() => setSelectedHour(hour)}
+                    aria-pressed={selectedHour === hour}
+                  >
+                    {hour}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="demand-time-column">
+              <span className="demand-time-column-label">PHÚT</span>
+
+              <div className="demand-time-scroll">
+                {minutes.map((minute) => (
+                  <button
+                    type="button"
+                    key={minute}
+                    className={
+                      selectedMinute === minute
+                        ? 'demand-time-option selected'
+                        : 'demand-time-option'
+                    }
+                    onClick={() => setSelectedMinute(minute)}
+                    aria-pressed={selectedMinute === minute}
+                  >
+                    {minute}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="demand-time-picker-actions">
+            <button
+              type="button"
+              className="demand-time-cancel"
+              onClick={() => setIsOpen(false)}
+            >
+              Hủy
+            </button>
+
+            <button
+              type="button"
+              className="demand-time-confirm"
+              onClick={confirmTime}
+            >
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      )}
+      {timeError && (
+          <div className="demand-time-error" role="alert">
+            {timeError}
+          </div>
+        )}
+    </div>
+  )
+}
+
 
 export default function DemandFormPage() {
   const { id } = useParams()
@@ -78,13 +270,17 @@ export default function DemandFormPage() {
   const [originalDemand, setOriginalDemand] = useState<DeliveryDemand | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let active = true
 
     async function loadForm() {
       setIsLoading(true)
+      setLoadError('')
       setError('')
       try {
         const [supplierData, outletData, itemData, offerData, demand] = await Promise.all([
@@ -126,7 +322,7 @@ export default function DemandFormPage() {
           setNextKey(demandRows.length + 1)
         }
       } catch (loadError) {
-        if (active) setError(getErrorMessage(loadError))
+        if (active) setLoadError(getErrorMessage(loadError))
       } finally {
         if (active) setIsLoading(false)
       }
@@ -136,7 +332,7 @@ export default function DemandFormPage() {
     return () => {
       active = false
     }
-  }, [demandId, isEdit])
+  }, [demandId, isEdit, reloadKey])
 
   const selectedItems = rows.map((row) =>
     items.find((item) => String(item.id) === row.item_id),
@@ -220,7 +416,21 @@ export default function DemandFormPage() {
       return
     }
 
-    if (startTime && endTime && endTime <= startTime) {
+    // Kiểm tra giờ bắt đầu và kết thúc
+    if (!startTime || !endTime) {
+      setError('Vui lòng chọn đầy đủ giờ bắt đầu và giờ kết thúc nhận hàng.')
+      return
+    }
+
+    const normalizedStartTime = normalizeTime(startTime)
+    const normalizedEndTime = normalizeTime(endTime)
+
+    if (!normalizedStartTime || !normalizedEndTime) {
+      setError('Giờ nhận hàng không hợp lệ. Vui lòng chọn lại.')
+      return
+    }
+
+    if (normalizedEndTime <= normalizedStartTime) {
       setError('Giờ kết thúc phải sau giờ bắt đầu.')
       return
     }
@@ -230,8 +440,23 @@ export default function DemandFormPage() {
       return
     }
 
-    if (rows.some((row) => !Number.isFinite(Number(row.required_weight_kg)) || Number(row.required_weight_kg) < 0.001)) {
-      setError('Khối lượng mỗi SKU phải lớn hơn hoặc bằng 0.001 kg.')
+    const invalidWeight = rows.some((row) => {
+      const value = row.required_weight_kg.trim()
+      const weight = Number(value)
+
+      return (
+        !value ||
+        !Number.isFinite(weight) ||
+        weight < 0.001 ||
+        weight > 999999999.999 ||
+        !/^\d+(\.\d{1,3})?$/.test(value)
+      )
+    })
+
+    if (invalidWeight) {
+      setError(
+        'Khối lượng mỗi SKU phải từ 0.001 đến 999999999.999 kg và tối đa 3 chữ số thập phân.'
+      )
       return
     }
 
@@ -250,18 +475,25 @@ export default function DemandFormPage() {
       return
     }
 
-    const demandItems: DemandItemInput[] = rows.map((row) => ({
-      item_id: Number(row.item_id),
-      required_weight_kg: row.required_weight_kg,
-      item_note: row.item_note.trim() || null,
-    }))
+    const demandItems: DemandItemInput[] = rows.map((row) => {
+      const selectedItem = items.find(
+        (item) => item.id === Number(row.item_id)
+      )
+
+      return {
+        item_id: Number(row.item_id),
+        required_weight_kg: row.required_weight_kg,
+        unit_of_measure: selectedItem?.weight_unit,
+        item_note: row.item_note.trim() || null,
+      }
+    })
 
     const payload: DemandCreateInput = {
       supplier_id: Number(supplierId),
       outlet_id: Number(outletId),
       requested_date: requestedDate,
-      requested_start_time: startTime || null,
-      requested_end_time: endTime || null,
+      requested_start_time: normalizedStartTime,
+      requested_end_time: normalizedEndTime,
       notes: notes.trim() || null,
       items: demandItems,
     }
@@ -293,7 +525,33 @@ export default function DemandFormPage() {
   if (isLoading) {
     return <div className="demand-form-state">Đang tải dữ liệu biểu mẫu...</div>
   }
+  if (loadError) {
+    return (
+      <section className="demand-form-page">
+        <div className="demand-form-error" role="alert">
+          <strong>Không thể tải dữ liệu biểu mẫu</strong>
+          <p>{loadError}</p>
+        </div>
 
+        <div className="demand-form-actions">
+          <Link
+            className="demand-secondary-button"
+            to="/demands"
+          >
+            Quay lại danh sách
+          </Link>
+
+          <button
+            type="button"
+            className="demand-primary-button"
+            onClick={() => setReloadKey((current) => current + 1)}
+          >
+            Thử tải lại
+          </button>
+        </div>
+      </section>
+    )
+  }
   if (error && isEdit && !originalDemand) {
     return (
       <section className="demand-form-page">
@@ -345,8 +603,14 @@ export default function DemandFormPage() {
           <div className="demand-form-grid">
             <label className="demand-field">
               <span>Nhà cung cấp <b>*</b></span>
-              <select value={supplierId} onChange={(event) => handleSupplierChange(event.target.value)} required>
+
+              <select
+                value={supplierId}
+                onChange={(event) => handleSupplierChange(event.target.value)}
+                required
+              >
                 <option value="">Chọn nhà cung cấp</option>
+
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.supplier_code} — {supplier.supplier_name}
@@ -354,7 +618,6 @@ export default function DemandFormPage() {
                 ))}
               </select>
             </label>
-
             <label className="demand-field">
               <span>Cửa hàng nhận <b>*</b></span>
               {isEdit ? (
@@ -371,20 +634,24 @@ export default function DemandFormPage() {
               )}
               {isEdit && <small>Cửa hàng nhận không thể thay đổi sau khi tạo.</small>}
             </label>
+            <TimePickerField
+              label="Giờ bắt đầu nhận"
+              value={startTime}
+              onChange={setStartTime}
+            />
+
+            <TimePickerField
+              label="Giờ kết thúc nhận"
+              value={endTime}
+              startTime={startTime}
+              onChange={setEndTime}
+            />
+
+            
 
             <label className="demand-field">
               <span>Ngày yêu cầu <b>*</b></span>
               <input type="date" value={requestedDate} onChange={(event) => setRequestedDate(event.target.value)} required />
-            </label>
-
-            <label className="demand-field">
-              <span>Giờ bắt đầu nhận</span>
-              <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} />
-            </label>
-
-            <label className="demand-field">
-              <span>Giờ kết thúc nhận</span>
-              <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} />
             </label>
           </div>
         </section>
@@ -395,7 +662,12 @@ export default function DemandFormPage() {
               <h2>Danh sách hàng hóa</h2>
               <p>Chọn các SKU thuộc cùng một Cargo Category.</p>
             </div>
-            <button type="button" className="demand-add-line-button" onClick={addRow}>
+            <button
+              type="button"
+              className="demand-add-line-button"
+              onClick={addRow}
+              disabled={isSaving}
+            >
               + Thêm SKU
             </button>
           </div>
@@ -427,7 +699,7 @@ export default function DemandFormPage() {
                     type="button"
                     className="demand-remove-line-button"
                     onClick={() => removeRow(row.key)}
-                    disabled={rows.length === 1}
+                    disabled={rows.length === 1 || isSaving}
                   >
                     Xóa dòng
                   </button>
@@ -473,7 +745,7 @@ export default function DemandFormPage() {
                     <input
                       type="number"
                       min="0.001"
-                      max="999999999"
+                      max="999999999.999"
                       step="0.001"
                       value={row.required_weight_kg}
                       onChange={(event) => updateRow(row.key, { required_weight_kg: event.target.value })}

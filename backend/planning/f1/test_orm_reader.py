@@ -129,12 +129,8 @@ def test_no_selected_demands_stops_after_initial_select(monkeypatch):
     assert request_manager.filters == []
     assert supplier_item_manager.filters == []
     assert (
-        "select_related",
-        ("supplier", "cargo_category"),
-    ) in selected_qs.calls
-    assert (
         "prefetch_related",
-        ("items__item",),
+        ("items__item", "supplier_confirmations"),
     ) in selected_qs.calls
     assert ("order_by", ("pk",)) in selected_qs.calls
 

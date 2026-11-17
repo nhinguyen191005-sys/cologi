@@ -4,7 +4,7 @@ import { ApiError } from '../services/api/client'
 import { listDemands } from '../services/api/demands'
 import type { DeliveryDemand, DemandStatus } from '../types/demand'
 import './DemandsPage.css'
-
+import { CoStatusBadge } from './foundation'
 const statusLabels: Record<DemandStatus, string> = {
   DRAFT: 'Bản nháp',
   SUBMITTED: 'Đã gửi',
@@ -12,15 +12,7 @@ const statusLabels: Record<DemandStatus, string> = {
   PLANNED: 'Đã lên kế hoạch',
   CANCELLED: 'Đã hủy',
 }
-
-const statusClasses: Record<DemandStatus, string> = {
-  DRAFT: 'draft',
-  SUBMITTED: 'submitted',
-  PLANNING: 'planning',
-  PLANNED: 'planned',
-  CANCELLED: 'cancelled',
-}
-
+import { useAuth } from '../contexts/useAuth'
 function formatDate(value: string): string {
   if (!value) return '—'
   const date = new Date(`${value}T00:00:00`)
@@ -43,6 +35,12 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function DemandsPage() {
+    const { user } = useAuth()
+
+  const canCreateDemand =
+    !!user?.roles.includes('PURCHASING_STAFF') &&
+    !user.roles.includes('MANAGER')
+    
   const [demands, setDemands] = useState<DeliveryDemand[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | DemandStatus>('ALL')
@@ -123,10 +121,17 @@ export default function DemandsPage() {
             Theo dõi và quản lý các yêu cầu giao hàng từ cửa hàng.
           </p>
         </div>
-        <Link className="demand-primary-button" to="/demands/new">
-          <span aria-hidden="true">＋</span>
-          Tạo nhu cầu
-        </Link>
+        
+{canCreateDemand && (
+  <Link
+    className="demand-primary-button"
+    to="/demands/new"
+  >
+    <span aria-hidden="true">＋</span>
+    Tạo nhu cầu
+  </Link>
+)}
+
       </section>
 
       <section className="demand-summary-grid" aria-label="Tổng quan nhu cầu">
@@ -297,10 +302,8 @@ export default function DemandsPage() {
                     </td>
                     <td>{formatDate(demand.requested_date)}</td>
                     <td>
-                      <span className={`demand-status ${statusClasses[demand.status]}`}>
-                        {statusLabels[demand.status]}
-                      </span>
-                    </td>
+  <CoStatusBadge status={demand.status} />
+</td>
                     <td>
                       <Link
                         className="demand-view-link"

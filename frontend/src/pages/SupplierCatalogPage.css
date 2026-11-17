@@ -562,13 +562,7 @@
   font-size: 11px;
 }
 
-.supplier-catalog-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-}
+
 
 .supplier-catalog-cancel {
   padding: 10px 16px;
@@ -620,11 +614,725 @@
     padding: 16px;
   }
 
+
+}
+
+
+/* ==========================================
+   COLOGI SUPPLIER MODAL - GLASS EDITION
+========================================== */
+
+.supplier-catalog-modal-backdrop {
+  background:
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(75, 177, 105, 0.19),
+      transparent 38%
+    ),
+    rgba(8, 28, 14, 0.56);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  animation: scm-fade-in 0.3s ease-out;
+}
+
+.supplier-catalog-modal {
+  box-sizing: border-box;
+  width: min(760px, 100%);
+  max-height: min(90dvh, 900px);
+  padding: 30px;
+
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.97),
+    rgba(246, 251, 246, 0.94)
+  );
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  box-shadow:
+    0 28px 85px rgba(0, 30, 12, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  animation: scm-pop-in 0.38s
+    cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Header */
+
+.supplier-catalog-modal-heading {
+  padding-bottom: 19px;
+  border-bottom: 1px solid rgba(18, 60, 27, 0.1);
+}
+
+.supplier-catalog-modal-heading h2 {
+  margin-top: 7px;
+  font-size: clamp(23px, 3vw, 30px);
+  line-height: 1.2;
+  color: #123C1B;
+  letter-spacing: -0.6px;
+}
+
+.supplier-catalog-modal-close {
+  width: 43px;
+  height: 43px;
+
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #DFE9E1;
+  color: #678070;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.supplier-catalog-modal-close:hover {
+  background: #EFF7F0;
+  color: #123C1B;
+  transform: rotate(90deg);
+}
+
+/* Glass card radio */
+
+.supplier-catalog-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.supplier-catalog-choice .supplier-catalog-choice-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 16px;
+
+  border: 1px solid #DFE9E1;
+  border-radius: 16px;
+
+  background: rgba(255, 255, 255, 0.68);
+
+  cursor: pointer;
+  transition: all 0.24s ease;
+}
+
+.supplier-catalog-choice-card:hover {
+  transform: translateY(-2px);
+  border-color: #99C8A5;
+  box-shadow: 0 10px 25px rgba(18, 60, 27, 0.07);
+}
+
+.supplier-catalog-choice .supplier-catalog-choice-card.is-active {
+  background: linear-gradient(
+    135deg,
+    rgba(75, 177, 105, 0.12),
+    rgba(213, 184, 90, 0.10)
+  );
+
+  border-color: #4BB169;
+
+  box-shadow:
+    0 0 0 2px rgba(75, 177, 105, 0.08);
+}
+
+.supplier-catalog-choice-card input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.supplier-catalog-choice-card:focus-within {
+  outline: 2px solid #4BB169;
+  outline-offset: 2px;
+}
+
+.supplier-catalog-choice-number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 12px;
+
+  background: #123C1B;
+  color: #E6CA74;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.supplier-catalog-choice-content {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.supplier-catalog-choice-content strong {
+  font-size: 13px;
+  color: #123C1B;
+  line-height: 1.3;
+}
+
+.supplier-catalog-choice-content small {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #748778;
+}
+
+/* Inputs */
+
+.supplier-catalog-form-field input,
+.supplier-catalog-form-field select,
+.supplier-catalog-form-field textarea {
+  box-sizing: border-box;
+  min-height: 48px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.78);
+  border-color: #DCE8DE;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.supplier-catalog-form-field input:focus,
+.supplier-catalog-form-field select:focus,
+.supplier-catalog-form-field textarea:focus {
+  background: #FFFFFF;
+  border-color: #4BB169;
+
+  box-shadow:
+    0 0 0 4px rgba(75, 177, 105, 0.12);
+}
+
+
+/* Animations */
+
+@keyframes scm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scm-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.975);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 620px) {
+  .supplier-catalog-modal {
+    padding: 19px;
+  }
+
+  .supplier-catalog-choice {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .supplier-catalog-modal,
+  .supplier-catalog-modal-backdrop {
+    animation: none;
+  }
+}
+
+
+/* ===========================================
+   COLOGI SUPPLIER MODAL - FINAL REFINEMENTS
+=========================================== */
+
+/* Backdrop không tạo thanh cuộn thứ hai */
+.supplier-catalog-modal-backdrop {
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+/* Modal vẫn cuộn được nhưng ẩn scrollbar */
+.supplier-catalog-modal {
+  box-sizing: border-box;
+
+  width: min(880px, 100%);
+  max-height: calc(100dvh - 40px);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  border-radius: 24px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(251, 253, 251, 0.97),
+    rgba(237, 245, 239, 0.95)
+  );
+}
+
+/* Chrome, Edge, Safari */
+.supplier-catalog-modal::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Bỏ hoàn toàn khung nền trắng ở footer */
+.supplier-catalog-form-actions {
+  position: static;
+  bottom: auto;
+  z-index: auto;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+
+  margin: 8px 0 0;
+  padding: 14px 0 0;
+
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(18, 60, 27, 0.09);
+
+  box-shadow: none;
+
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Nút Hủy */
+.supplier-catalog-form-actions
+.supplier-catalog-cancel {
+  min-height: 46px;
+  padding: 0 22px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(18, 60, 27, 0.13);
+
+  background: rgba(255, 255, 255, 0.58);
+  color: #245032;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  box-shadow: none;
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.supplier-catalog-form-actions
+.supplier-catalog-cancel:hover:not(:disabled) {
+  background: #e8f2ea;
+  transform: translateY(-2px);
+}
+
+/* Nút Thêm mặt hàng */
+.supplier-catalog-form-actions
+.supplier-catalog-primary {
+  min-height: 46px;
+  padding: 0 24px;
+
+  border: 1px solid #1e6b3a;
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #123c1b,
+    #1e6b3a
+  );
+
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+
+  box-shadow: 0 7px 18px rgba(18, 60, 27, 0.14);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.supplier-catalog-form-actions
+.supplier-catalog-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 24px rgba(18, 60, 27, 0.2);
+}
+
+.supplier-catalog-form-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Không kéo giãn footer trên mobile */
+@media (max-width: 480px) {
+  .supplier-catalog-modal-backdrop {
+    padding: 10px;
+  }
+
+  .supplier-catalog-modal {
+    max-height: calc(100dvh - 20px);
+    padding: 18px;
+  }
+
   .supplier-catalog-form-actions {
-    flex-direction: column-reverse;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .supplier-catalog-form-actions button {
-    width: 100%;
+    width: auto;
+    flex: 1;
+    min-width: 115px;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .supplier-catalog-form-actions button {
+    transition: none;
+  }
+}
+
+
+/* =========================================
+   COLOGI - MINI GLASS TOAST
+========================================= */
+
+.supplier-mini-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: max-content;
+  max-width: min(440px, calc(100vw - 32px));
+  min-width: min(330px, calc(100vw - 32px));
+
+  box-sizing: border-box;
+  padding: 14px 16px;
+
+  border: 1px solid rgba(197, 222, 202, 0.85);
+  border-left: 4px solid #1e6b3a;
+  border-radius: 15px;
+
+  background: rgba(255, 255, 255, 0.94);
+  color: #173d27;
+
+  box-shadow:
+    0 14px 45px rgba(18, 60, 27, 0.15),
+    0 4px 12px rgba(18, 60, 27, 0.05);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  animation: supplier-toast-in
+    0.28s cubic-bezier(.2, .8, .2, 1);
+}
+
+.supplier-mini-toast--error {
+  border-left-color: #be554a;
+}
+
+.supplier-mini-toast-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 11px;
+  background: #e5f4e9;
+  color: #1e6b3a;
+
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.supplier-mini-toast--error
+.supplier-mini-toast-icon {
+  background: #fff0ed;
+  color: #b7433b;
+}
+
+.supplier-mini-toast-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.supplier-mini-toast-content strong {
+  display: block;
+
+  color: #153a25;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.supplier-mini-toast-content p {
+  margin: 4px 0 0;
+
+  color: #647d6a;
+  font-size: 11px;
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+}
+
+.supplier-mini-toast-undo {
+  flex-shrink: 0;
+
+  min-height: 34px;
+  padding: 6px 10px;
+
+  border: 1px solid #cde3d1;
+  border-radius: 9px;
+
+  background: #eaf6ec;
+  color: #1e6b3a;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.supplier-mini-toast-undo:hover:not(:disabled) {
+  background: #d8efde;
+  transform: translateY(-1px);
+}
+
+.supplier-mini-toast-undo:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.supplier-mini-toast-close {
+  align-self: flex-start;
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 22px;
+  height: 22px;
+  padding: 0;
+
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+
+  color: #8a9e8e;
+  font-size: 18px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.supplier-mini-toast-close:hover {
+  background: #edf3ee;
+  color: #123c1b;
+}
+
+@keyframes supplier-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .supplier-mini-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+
+    width: auto;
+    min-width: 0;
+    max-width: none;
+
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .supplier-mini-toast,
+  .supplier-mini-toast-undo {
+    animation: none;
+    transition: none;
+  }
+}
+
+
+/* Modern toast notification */
+
+.supplier-catalog-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: max-content;
+  min-width: 320px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 14px 16px;
+
+  background: #ffffff;
+  border: 1px solid #e5eee7;
+  border-left: 4px solid #25804a;
+  border-radius: 14px;
+
+  box-shadow:
+    0 10px 35px rgba(20, 50, 30, 0.10),
+    0 2px 8px rgba(20, 50, 30, 0.04);
+
+  font-size: 14px;
+  color: #253b2c;
+
+  animation: catalogToastIn 0.25s ease-out;
+}
+
+.supplier-catalog-toast.is-error {
+  border-left-color: #dc5757;
+}
+
+.supplier-catalog-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 50%;
+  background: #eaf6ee;
+  color: #25804a;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.supplier-catalog-toast.is-error
+.supplier-catalog-toast-icon {
+  background: #fff0f0;
+  color: #dc5757;
+}
+
+.supplier-catalog-toast-message {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.supplier-catalog-toast-undo {
+  flex-shrink: 0;
+  padding: 6px 8px;
+
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+
+  color: #217547;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: background 0.2s;
+}
+
+.supplier-catalog-toast-undo:hover {
+  background: #edf7f0;
+}
+
+.supplier-catalog-toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 26px;
+  height: 26px;
+  padding: 0;
+
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+
+  color: #96a49a;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.supplier-catalog-toast-close:hover {
+  background: #f1f4f2;
+  color: #42564a;
+}
+
+@keyframes catalogToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .supplier-catalog-toast {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    min-width: 0;
+  }
+}
+

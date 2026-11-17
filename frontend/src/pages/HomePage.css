@@ -1718,3 +1718,69 @@ no global component overrides. */
     max-width: calc(100vw - 32px);
   }
 }
+
+
+/* ===================================
+   SUPPLIER RESPONSE DONUT - HOME
+=================================== */
+
+.clh-progress .cla-donut-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+  width: 100%;
+  margin: auto 0;
+  padding: 28px 0;
+}
+
+.clh-progress .cla-donut {
+  width: 195px;
+  max-width: 100%;
+  flex: 0 1 195px;
+}
+
+.clh-progress .cla-donut-legend {
+  display: grid;
+  gap: 14px;
+
+  min-width: 160px;
+  flex: 1;
+}
+
+.clh-progress .cla-donut-legend > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #738978;
+  font-size: 12px;
+}
+
+.clh-progress .cla-donut-legend strong {
+  margin-left: auto;
+  color: #173D29;
+  font-size: 13px;
+}
+
+/* Khi không đủ chiều ngang, biểu đồ
+   và chú giải tự chuyển thành hai hàng */
+
+@media (max-width: 700px) {
+  .clh-progress .cla-donut-wrap {
+    flex-direction: column;
+    padding: 14px 0;
+  }
+
+  .clh-progress .cla-donut {
+    width: 210px;
+    flex: none;
+  }
+
+  .clh-progress .cla-donut-legend {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -199,3 +199,24 @@ def test_demand_data_validation_rejects_inactive_item():
     demand.items.all()[0].item.is_active = False
 
     assert demand_data_is_valid(demand) is False
+
+def test_demand_data_validation_rejects_item_total_mismatch():
+    demand = make_demand()
+    demand.items.all()[0].required_weight_kg = Decimal("4.999")
+
+    assert demand_data_is_valid(demand) is False
+
+def test_capacity_requests_use_confirmed_not_promised_weight():
+    demand = make_demand()
+    request = make_request(demand)
+    promise = make_promise(request, demand)
+
+    promise.promised_weight_kg = Decimal("100")
+    promise.confirmed_weight_kg = Decimal("60")
+    promise.line_status = "PARTIAL"
+    request.supplier_confirmation.confirmation_status = "PARTIAL"
+    request.item_promises = related([promise])
+
+    result = build_capacity_requests([request])
+
+    assert result[0].promises[0].confirmed_weight_kg == Decimal("60")

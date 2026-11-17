@@ -7,7 +7,7 @@ import type {
   SupplierRequestResponse,
 } from '../types/supplier'
 import './SupplierRequestDetailPage.css'
-
+import { SupplierLifecyclePanels } from './foundation/SupplierLifecyclePanels'
 interface ItemResponse {
   confirmedWeight: string
   declineReason: string
@@ -63,7 +63,6 @@ export default function SupplierRequestDetailPage() {
   const [readyDate, setReadyDate] = useState('')
   const [readyStartTime, setReadyStartTime] = useState('')
   const [readyEndTime, setReadyEndTime] = useState('')
-  const [pickupAddress, setPickupAddress] = useState('')
   const [confirmationNote, setConfirmationNote] = useState('')
   const [result, setResult] = useState<SupplierRequestResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -96,7 +95,6 @@ export default function SupplierRequestDetailPage() {
       setReadyDate(toInputDate(found.ready_date))
       setReadyStartTime(found.ready_start_time?.slice(0, 5) ?? '')
       setReadyEndTime(found.ready_end_time?.slice(0, 5) ?? '')
-      setPickupAddress(found.pickup_address ?? '')
       setConfirmationNote(found.confirmation_note ?? '')
     } catch (loadError) {
       setError(getErrorMessage(loadError))
@@ -157,8 +155,13 @@ export default function SupplierRequestDetailPage() {
       const response = responses[item.id]
       const quantity = Number(response?.confirmedWeight)
 
-      if (!Number.isFinite(quantity) || quantity < 0) {
-        setValidationError(`Số lượng xác nhận của "${item.item_name}" không hợp lệ.`)
+if (
+  !Number.isFinite(quantity) ||
+  quantity < 0 ||
+  !/^(?:\d+)(?:\.\d{1,3})?$/.test(
+    response?.confirmedWeight ?? ''
+  )
+) {        setValidationError(`Số lượng xác nhận của "${item.item_name}" không hợp lệ.`)
         return
       }
       if (quantity > Number(item.promised_weight_kg)) {
@@ -176,10 +179,12 @@ export default function SupplierRequestDetailPage() {
     }
 
     if (hasPositiveQuantity) {
-      if (!readyDate || !readyStartTime || !readyEndTime || !pickupAddress.trim()) {
-        setValidationError('Khi có mặt hàng được xác nhận, cần nhập ngày sẵn sàng, giờ bắt đầu, giờ kết thúc và địa chỉ lấy hàng.')
-        return
-      }
+if (!readyDate || !readyStartTime || !readyEndTime) {
+  setValidationError(
+    'Vui lòng nhập ngày sẵn sàng, giờ bắt đầu và giờ kết thúc.'
+  )
+  return
+}
       if (readyStartTime >= readyEndTime) {
         setValidationError('Giờ kết thúc phải sau giờ bắt đầu.')
         return
@@ -197,7 +202,6 @@ export default function SupplierRequestDetailPage() {
         ready_date: hasPositiveQuantity ? readyDate : null,
         ready_start_time: hasPositiveQuantity ? readyStartTime : null,
         ready_end_time: hasPositiveQuantity ? readyEndTime : null,
-        pickup_address: hasPositiveQuantity ? pickupAddress.trim() : null,
         confirmation_note: confirmationNote.trim(),
       })
       setResult(response)
@@ -393,6 +397,14 @@ export default function SupplierRequestDetailPage() {
           <div className="supplier-detail-totals">
             <span>Tổng số lượng đã hứa: <strong>{formatWeight(totalPromised)}</strong></span>
             <span>Tổng số lượng xác nhận: <strong>{formatWeight(totalConfirmed)}</strong></span>
+            <span>
+                  Còn thiếu:{' '}
+                  <strong>
+                    {formatWeight(
+                      Math.max(0, totalPromised - totalConfirmed)
+                    )}
+                  </strong>
+                </span>
           </div>
         </section>
 
@@ -435,17 +447,6 @@ export default function SupplierRequestDetailPage() {
                 required={isEditable && hasPositiveQuantity}
               />
             </label>
-            <label className="supplier-ready-address">
-              <span>Địa chỉ lấy hàng</span>
-              <input
-                type="text"
-                value={pickupAddress}
-                onChange={(event) => setPickupAddress(event.target.value)}
-                placeholder="Nhập địa chỉ kho hoặc điểm lấy hàng"
-                disabled={!isEditable || !hasPositiveQuantity}
-                required={isEditable && hasPositiveQuantity}
-              />
-            </label>
           </div>
 
           <label className="supplier-confirmation-note">
@@ -481,6 +482,7 @@ export default function SupplierRequestDetailPage() {
           </div>
         )}
       </form>
+            <SupplierLifecyclePanels request={request} />
     </div>
   )
 }

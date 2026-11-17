@@ -4,6 +4,7 @@ from django.db.models.lookups import Exact
 from .json_validators import (
     validate_diagnostics_array,
     validate_json_object,
+    validate_demand_snapshot,
 )
 from django.conf import settings
 from django.db import models
@@ -310,6 +311,9 @@ class PlanningRunDemand(models.Model):
         "demands.DeliveryDemand",
         on_delete=models.PROTECT,
         related_name="planning_run_records",
+    )
+    demand_snapshot = models.JSONField(
+        validators=[validate_demand_snapshot],
     )
     eligibility_status = models.CharField(
         max_length=20,

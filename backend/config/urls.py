@@ -12,6 +12,7 @@ from .health import live_health, ready_health
 
 
 urlpatterns = [
+    path("api/planning/", include("planning.urls")),
     path(
         "admin/masterdata/",
         include("masterdata.admin_urls"),
